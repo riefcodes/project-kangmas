@@ -7,11 +7,11 @@ class CreateOrderScreen extends StatefulWidget {
   final String category;
 
   const CreateOrderScreen({
-    Key? key,
+    super.key,
     required this.tukangId,
     required this.tukangName,
     required this.category,
-  }) : super(key: key);
+  });
 
   @override
   _CreateOrderScreenState createState() => _CreateOrderScreenState();

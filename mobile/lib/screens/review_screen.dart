@@ -5,7 +5,7 @@ class ReviewScreen extends StatefulWidget {
   final int orderId;
   final String tukangName;
 
-  const ReviewScreen({Key? key, required this.orderId, required this.tukangName}) : super(key: key);
+  const ReviewScreen({super.key, required this.orderId, required this.tukangName});
 
   @override
   _ReviewScreenState createState() => _ReviewScreenState();

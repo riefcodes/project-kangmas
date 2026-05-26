@@ -61,7 +61,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      throw e;
+      rethrow;
     }
 
     _isLoading = false;
@@ -88,7 +88,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      throw e;
+      rethrow;
     }
 
     _isLoading = false;
@@ -102,7 +102,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       // Ignore if token is already expired
     }
-    
+
     _token = null;
     _user = null;
     final prefs = await SharedPreferences.getInstance();

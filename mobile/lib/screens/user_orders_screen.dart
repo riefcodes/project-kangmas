@@ -5,6 +5,8 @@ import '../models/order_model.dart';
 import 'review_screen.dart';
 
 class UserOrdersScreen extends StatefulWidget {
+  const UserOrdersScreen({super.key});
+
   @override
   _UserOrdersScreenState createState() => _UserOrdersScreenState();
 }
@@ -102,7 +104,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                             Text('Kendala: ${order.description}'),
                             if (order.totalPrice != null)
                               Text('Total Harga: Rp ${order.totalPrice}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            
+
                             const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,

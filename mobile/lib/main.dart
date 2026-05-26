@@ -20,7 +20,7 @@ void main() {
 }
 
 class KangmasApp extends StatelessWidget {
-  const KangmasApp({Key? key}) : super(key: key);
+  const KangmasApp({super.key});
 
   @override
   Widget build(BuildContext context) {

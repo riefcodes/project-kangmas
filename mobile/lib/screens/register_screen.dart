@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -17,7 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Tukang specific
   final _addressCtl = TextEditingController();
   final _priceCtl = TextEditingController();
-  
+
   String _role = 'user';
   String _category = 'listrik';
 
@@ -66,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           children: [
             DropdownButtonFormField<String>(
-              value: _role,
+              initialValue: _role,
               decoration: const InputDecoration(labelText: 'Mendaftar sebagai'),
               items: const [
                 DropdownMenuItem(value: 'user', child: Text('Pencari Jasa (User)')),
@@ -79,12 +81,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             TextField(controller: _phoneCtl, decoration: const InputDecoration(labelText: 'No. WhatsApp')),
             TextField(controller: _passCtl, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
             TextField(controller: _passConfCtl, decoration: const InputDecoration(labelText: 'Konfirmasi Password'), obscureText: true),
-            
+
             if (_role == 'tukang') ...[
               const Divider(height: 30, thickness: 2,),
               const Text('Data Profil Tukang', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<String>(
-                value: _category,
+                initialValue: _category,
                 decoration: const InputDecoration(labelText: 'Kategori Keahlian'),
                 items: const [
                   DropdownMenuItem(value: 'listrik', child: Text('Listrik')),
