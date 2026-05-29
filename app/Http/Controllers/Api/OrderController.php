@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -116,8 +117,7 @@ class OrderController extends Controller
      * - Tukang can: accepted, completed (+ total_price).
      * - User can: cancelled.
      */
-    public function update(Request $request, string $id): JsonResponse
-    {
+    public function update(Request $request, string $id): JsonResponse{
         $user  = $request->user();
         $order = Order::find($id);
 
@@ -129,69 +129,82 @@ class OrderController extends Controller
             ], 404);
         }
 
-        // ── Tukang updates ──────────────────────────────────
-        if ($user->role === 'tukang' && $order->tukang_id === $user->id) {
-            $validated = $request->validate([
-                'status'      => 'required|in:accepted,completed',
-                'total_price' => 'nullable|integer|min:0',
-            ]);
+        return DB::transaction(function () use ($request, $user, $order) {
 
-            // Can only accept a pending order
-            if ($validated['status'] === 'accepted' && $order->status !== 'pending') {
+            // ── Tukang update ──────────────────────────────
+            if ($user->role === 'tukang' && $order->tukang_id === $user->id) {
+
+                $validated = $request->validate([
+                    'status'      => 'required|in:accepted,completed',
+                    'total_price' => 'required_if:status,completed|integer|min:0',
+                ]);
+
+                // pending → accepted only
+                if ($validated['status'] === 'accepted' && $order->status !== 'pending') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Only pending orders can be accepted',
+                        'data'    => null,
+                    ], 422);
+                }
+
+                // accepted → completed only
+                if ($validated['status'] === 'completed' && $order->status !== 'accepted') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Only accepted orders can be completed',
+                        'data'    => null,
+                    ], 422);
+                }
+
+                $order->status = $validated['status'];
+
+                if ($validated['status'] === 'completed') {
+                    $order->total_price = $validated['total_price'];
+                }
+            
+                $order->save();
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Only pending orders can be accepted',
-                    'data'    => null,
-                ], 422);
+                    'success' => true,
+                    'message' => 'Order updated successfully',
+                    'data'    => $order->load([
+                        'user:id,name,phone_number',
+                        'tukang:id,name,phone_number'
+                    ]),
+                ], 200);
             }
 
-            // Can only complete an accepted order
-            if ($validated['status'] === 'completed' && $order->status !== 'accepted') {
+            // ── User cancellation ──────────────────────────────
+            if ($user->role === 'user' && $order->user_id === $user->id) {
+
+                if ($order->status !== 'pending') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Only pending orders can be cancelled',
+                        'data'    => null,
+                    ], 422);
+                }
+
+                $order->status = 'cancelled';
+                $order->save();
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Only accepted orders can be completed',
-                    'data'    => null,
-                ], 422);
+                    'success' => true,
+                    'message' => 'Order cancelled',
+                    'data'    => $order->load([
+                        'user:id,name,phone_number',
+                        'tukang:id,name,phone_number'
+                    ]),
+                ], 200);
             }
-
-            $order->status = $validated['status'];
-            if (isset($validated['total_price'])) {
-                $order->total_price = $validated['total_price'];
-            }
-            $order->save();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Order updated successfully',
-                'data'    => $order->load(['user:id,name,phone_number', 'tukang:id,name,phone_number']),
-            ]);
-        }
-
-        // ── User cancellation ──────────────────────────────
-        if ($user->role === 'user' && $order->user_id === $user->id) {
-            if ($order->status !== 'pending') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only pending orders can be cancelled',
-                    'data'    => null,
-                ], 422);
-            }
-
-            $order->status = 'cancelled';
-            $order->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Order cancelled',
-                'data'    => $order->load(['user:id,name,phone_number', 'tukang:id,name,phone_number']),
-            ]);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Unauthorized',
-            'data'    => null,
-        ], 403);
+                'success' => false,
+                'message' => 'Unauthorized',
+                'data'    => null,
+            ], 403);
+        });
     }
 
     /**

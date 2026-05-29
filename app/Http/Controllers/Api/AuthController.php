@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -35,7 +36,8 @@ class AuthController extends Controller
         }
 
         $validated = $request->validate($rules);
-
+        
+    $user = DB::transaction(function () use ($validated) {
         // Create user
         $user = User::create([
             'name'         => $validated['name'],
@@ -57,6 +59,8 @@ class AuthController extends Controller
             ]);
         }
 
+        return $user;
+    });
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
