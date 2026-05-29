@@ -48,24 +48,24 @@ class TukangController extends Controller
             ? $request->file('portofolio')->store('documents/portfolios', 'public') 
             : null;
 
-        // 3. Create Tukang Profile
+        // 3. Create Tukang Profile (with document paths saved to DB)
         $profile = TukangProfile::create([
-            'user_id'        => $user->id,
-            'category'       => $this->mapCategory($request->kategori),
-            'latitude'       => $request->lat ?? 0,
-            'longitude'      => $request->lng ?? 0,
-            'lat'            => $request->lat ?? 0,
-            'lng'            => $request->lng ?? 0,
-            'address'        => $request->locationDetail ?? '-',
-            'status'         => 'pending',
-            'is_blacklisted' => false,
-            'is_active'      => true,
-            'base_price'     => 0, // Default
+            'user_id'         => $user->id,
+            'category'        => $this->mapCategory($request->kategori),
+            'latitude'        => $request->lat ?? 0,
+            'longitude'       => $request->lng ?? 0,
+            'lat'             => $request->lat ?? 0,
+            'lng'             => $request->lng ?? 0,
+            'address'         => $request->locationDetail ?? '-',
+            'status'          => 'pending',
+            'is_blacklisted'  => false,
+            'is_active'       => true,
+            'base_price'      => 0,
+            'ktp_path'        => $ktpPath,
+            'selfie_path'     => $selfiePath,
+            'portofolio_path' => $portfolioPath,
         ]);
 
-        // In a real app, we might store document paths in a separate table, 
-        // but for now we'll just return success.
-        
         return response()->json([
             'success' => true,
             'message' => 'Pendaftaran berhasil dikirim. Menunggu verifikasi admin.',
@@ -86,10 +86,13 @@ class TukangController extends Controller
             ->get()
             ->map(function($p) {
                 return [
-                    'id'    => $p->id,
-                    'nama'  => $p->user->name,
-                    'skill' => $p->category,
-                    'phone' => $p->user->phone_number
+                    'id'         => $p->id,
+                    'nama'       => $p->user->name,
+                    'skill'      => $p->category,
+                    'phone'      => $p->user->phone_number,
+                    'ktp_url'    => $p->ktp_path ? Storage::disk('public')->url($p->ktp_path) : null,
+                    'selfie_url' => $p->selfie_path ? Storage::disk('public')->url($p->selfie_path) : null,
+                    'portofolio_url' => $p->portofolio_path ? Storage::disk('public')->url($p->portofolio_path) : null,
                 ];
             });
 
