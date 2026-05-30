@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { WrenchScrewdriverIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import { GoogleMap, useLoadScript, Marker } from '@react-google-maps/api';
+import { MapPin, Check } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -211,7 +212,7 @@ export default function RegisterTukang({ onSubmit }) {
                     
                     <div className="mb-3">
                        <button type="button" onClick={handleGetLocation} className="text-sm bg-primary text-gray-900 font-bold px-4 py-2 rounded shadow-sm hover:bg-primary-hover transition flex items-center gap-2">
-                          📍 Gunakan GPS Saat Ini
+                          <MapPin className="w-4 h-4 inline" /> Gunakan GPS Saat Ini
                        </button>
                     </div>
 
@@ -249,7 +250,7 @@ export default function RegisterTukang({ onSubmit }) {
                        )}
                     </div>
                     {formData.lat && formData.lng ? (
-                       <p className="text-xs text-green-600 mt-2 font-bold">✓ Koordinat terpilih: {formData.lat.toFixed(5)}, {formData.lng.toFixed(5)}</p>
+                       <p className="text-xs text-green-600 mt-2 font-bold flex items-center gap-1"><Check className="w-3 h-3" /> Koordinat terpilih: {formData.lat.toFixed(5)}, {formData.lng.toFixed(5)}</p>
                     ) : (
                        <p className="text-xs text-red-500 mt-2 font-bold">*Wajib mengklik lokasi pada peta</p>
                     )}

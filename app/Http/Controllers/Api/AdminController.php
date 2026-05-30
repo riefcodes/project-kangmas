@@ -45,7 +45,7 @@ class AdminController extends Controller
             $query->where('role', $request->query('role'));
         }
 
-        $users = $query->paginate($request->query('per_page', 15));
+        $users = $query->paginate($request->query('per_page', 100));
 
         return response()->json([
             'success' => true,
@@ -69,12 +69,58 @@ class AdminController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        $orders = $query->paginate($request->query('per_page', 15));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List of orders',
-            'data'    => $orders,
-        ]);
-    }
-}
+        $orders = $query->paginate($request->query('per_page', 100));
+ 
+         return response()->json([
+             'success' => true,
+             'message' => 'List of orders',
+             'data'    => $orders,
+         ]);
+     }
+ 
+     /**
+      * Get analytics for all tukangs.
+      */
+     public function tukangAnalytics(Request $request): JsonResponse
+     {
+         $tukangs = User::where('role', 'tukang')
+             ->whereHas('tukangProfile', function ($query) {
+                 $query->where('status', 'approved');
+             })
+             ->with('tukangProfile')
+             ->withCount([
+                 'tukangOrders as total_orders_count',
+                 'tukangOrders as completed_orders_count' => function ($query) {
+                     $query->where('status', 'completed');
+                 }
+             ])
+             ->withAvg('tukangReviews as rating_avg', 'rating')
+             ->get()
+             ->map(function ($user) {
+                 $uniqueCustomers = Order::where('tukang_id', $user->id)
+                     ->distinct()
+                     ->count('user_id');
+ 
+                 return [
+                     'id' => $user->id,
+                     'name' => $user->name,
+                     'email' => $user->email,
+                     'phone_number' => $user->phone_number,
+                     'skill' => $user->tukangProfile?->category ?? '-',
+                     'location' => $user->tukangProfile?->address ?? '-',
+                     'status' => $user->tukangProfile?->status ?? 'Inactive',
+                     'is_blacklisted' => $user->tukangProfile?->is_blacklisted ?? false,
+                     'total_orders' => $user->total_orders_count,
+                     'completed_orders' => $user->completed_orders_count,
+                     'rating' => $user->rating_avg ? round($user->rating_avg, 1) : null,
+                     'unique_customers' => $uniqueCustomers,
+                 ];
+             });
+ 
+         return response()->json([
+             'success' => true,
+             'message' => 'Tukang analytics retrieved successfully',
+             'data'    => $tukangs,
+         ]);
+     }
+ }

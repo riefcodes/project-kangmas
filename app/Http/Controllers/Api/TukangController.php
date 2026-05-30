@@ -52,6 +52,7 @@ class TukangController extends Controller
         $profile = TukangProfile::create([
             'user_id'         => $user->id,
             'category'        => $this->mapCategory($request->kategori),
+            'experience'      => $request->experience ?? 0,
             'latitude'        => $request->lat ?? 0,
             'longitude'       => $request->lng ?? 0,
             'lat'             => $request->lat ?? 0,
@@ -86,12 +87,17 @@ class TukangController extends Controller
             ->get()
             ->map(function($p) {
                 return [
-                    'id'         => $p->id,
-                    'nama'       => $p->user->name,
-                    'skill'      => $p->category,
-                    'phone'      => $p->user->phone_number,
-                    'ktp_url'    => $p->ktp_path ? Storage::disk('public')->url($p->ktp_path) : null,
-                    'selfie_url' => $p->selfie_path ? Storage::disk('public')->url($p->selfie_path) : null,
+                    'id'             => $p->id,
+                    'nama'           => $p->user->name,
+                    'email'          => $p->user->email,
+                    'skill'          => $p->category,
+                    'experience'     => $p->experience,
+                    'phone'          => $p->user->phone_number,
+                    'address'        => $p->address,
+                    'lat'            => $p->lat,
+                    'lng'            => $p->lng,
+                    'ktp_url'        => $p->ktp_path ? Storage::disk('public')->url($p->ktp_path) : null,
+                    'selfie_url'     => $p->selfie_path ? Storage::disk('public')->url($p->selfie_path) : null,
                     'portofolio_url' => $p->portofolio_path ? Storage::disk('public')->url($p->portofolio_path) : null,
                 ];
             });

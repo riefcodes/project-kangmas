@@ -12,7 +12,7 @@ export default function Footer() {
               <WrenchScrewdriverIcon className="h-8 w-8 text-primary" />
               <span className="text-3xl font-bold tracking-tight text-white">KANGMAS</span>
             </div>
-            
+
             {/* Contact Grid */}
             <div className="flex flex-wrap gap-8">
               <div className="flex items-center gap-3">
@@ -30,7 +30,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-200">Kontak Kami</p>
-                  <p className="text-sm font-semibold text-white">+62 813-9266-3985</p>
+                  <p className="text-sm font-semibold text-white">+62 130-0000-000</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">

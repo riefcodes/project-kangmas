@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api';
-import { StarIcon, MapPinIcon } from '@heroicons/react/24/solid';
+import { Smartphone, Download, Star } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -38,6 +38,7 @@ export default function MapsSection() {
   });
 
   const [selectedTukang, setSelectedTukang] = useState(null);
+  const [showMobileAlert, setShowMobileAlert] = useState(false);
 
   const getStatusColor = (status) => {
      return status === 'Available' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
@@ -45,6 +46,60 @@ export default function MapsSection() {
 
   return (
     <section id="maps" className="w-full bg-white py-20 border-t border-gray-100">
+      {/* CSS Hack to automatically clean Google Maps overlays & popup alerts */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .gm-err-container, .gm-err-modal, .gm-err-content {
+          display: none !important;
+        }
+        .gm-style iframe + div {
+          background-color: transparent !important;
+        }
+        .gm-style-cc {
+          display: none !important;
+        }
+        .gmnoprint {
+          display: none !important;
+        }
+        a[href^="https://maps.google.com/maps"] {
+          display: none !important;
+        }
+        a[href^="https://www.google.com/maps"] {
+          display: none !important;
+        }
+      `}} />
+
+      {/* Premium Mobile App Redirect Modal */}
+      {showMobileAlert && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl text-center border border-gray-100">
+            <div className="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
+              <Smartphone className="w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Pesan via Aplikasi Mobile</h3>
+            <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+              Untuk melakukan pemesanan jasa tukang secara praktis, memantau posisi tukang secara real-time, dan bertransaksi dengan aman, silakan gunakan aplikasi mobile <strong>KANGMAS</strong>!
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <button 
+                onClick={() => {
+                  alert('Fitur download aplikasi mobile segera hadir di Google Play Store!');
+                  setShowMobileAlert(false);
+                }}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition text-sm shadow-md flex items-center justify-center gap-2"
+              >
+                <Download className="w-4 h-4" /> Unduh untuk Android (.APK)
+              </button>
+              <button 
+                onClick={() => setShowMobileAlert(false)}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl transition text-xs"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="kangmas-container">
         <div className="text-center mb-12">
           <div className="inline-block text-primary text-sm font-semibold mb-2">Pusat Layanan</div>
@@ -122,7 +177,7 @@ export default function MapsSection() {
                     <div className="p-2 min-w-[220px]">
                       <h3 className="font-bold text-gray-900 text-lg">{selectedTukang.nama || selectedTukang.name}</h3>
                       <div className="flex items-center gap-1 mt-1 font-semibold text-gray-700">
-                        <StarIcon className="w-4 h-4 text-yellow-400" />
+                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                         {selectedTukang.rating}
                       </div>
 
@@ -134,6 +189,7 @@ export default function MapsSection() {
                       </div>
 
                       <button 
+                        onClick={() => setShowMobileAlert(true)}
                         disabled={selectedTukang.status === 'Busy'}
                         className={`mt-4 w-full font-bold py-1.5 rounded text-sm transition ${
                            selectedTukang.status === 'Available' ? 'bg-primary text-gray-900 hover:bg-primary-hover' : 'bg-gray-300 text-gray-500 cursor-not-allowed'

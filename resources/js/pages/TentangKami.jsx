@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
-import { BuildingOfficeIcon, UserGroupIcon, StarIcon, WrenchIcon } from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon, UserGroupIcon, WrenchIcon } from '@heroicons/react/24/outline';
+import { Hand, Star } from 'lucide-react';
 
 export default function TentangKami() {
   return (
@@ -11,7 +12,7 @@ export default function TentangKami() {
           <div className="flex flex-col lg:flex-row items-center gap-12">
             <div className="lg:w-1/2">
               <div className="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-sm font-semibold text-gray-700 mb-6">
-                 <span>👋</span> Selamat Datang Di TUKANG
+                 <Hand className="w-4 h-4" /> Selamat Datang Di TUKANG
               </div>
               <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-6">
                 Kami Berkomitmen<br/>Untuk Kualitas
@@ -61,7 +62,7 @@ export default function TentangKami() {
               { icon: <WrenchIcon className="h-10 w-10 text-primary" />, num: '2000+', label: 'Pekerjaan Selesai' },
               { icon: <BuildingOfficeIcon className="h-10 w-10 text-primary" />, num: '100+', label: 'Partner Bisnis' },
               { icon: <UserGroupIcon className="h-10 w-10 text-primary" />, num: '1000+', label: 'Tenaga Kerja TUKANG' },
-              { icon: <StarIcon className="h-10 w-10 text-primary" />, num: '1000+', label: 'Konsumen Senang' },
+              { icon: <Star className="h-10 w-10 text-primary" />, num: '1000+', label: 'Konsumen Senang' },
             ].map((stat, i) => (
               <div key={i} className="bg-white p-8 rounded-xl shadow border border-gray-100 text-center flex flex-col items-center justify-center">
                 <div className="mb-4">{stat.icon}</div>
@@ -78,7 +79,7 @@ export default function TentangKami() {
         <div className="kangmas-container flex flex-col lg:flex-row gap-16">
           <div className="lg:w-1/2">
              <div className="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-sm font-semibold text-gray-700 mb-6">
-                 <span>👋</span> Selamat Datang Di TUKANG
+                 <Hand className="w-4 h-4" /> Selamat Datang Di TUKANG
              </div>
              <h2 className="text-4xl font-bold text-gray-900 mb-6 leading-tight">
                Ayo Membangun Sesuatu Yang Kreatif Bersama!

@@ -15,6 +15,7 @@ class TukangProfile extends Model
     protected $fillable = [
         'user_id',
         'category',
+        'experience',
         'latitude',
         'longitude',
         'lat',

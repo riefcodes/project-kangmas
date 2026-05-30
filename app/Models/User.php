@@ -73,4 +73,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class);
     }
+
+    /**
+     * Get the orders assigned to this user (as tukang).
+     */
+    public function tukangOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'tukang_id');
+    }
+
+    /**
+     * Get the reviews received by this user (as tukang).
+     */
+    public function tukangReviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'tukang_id');
+    }
 }

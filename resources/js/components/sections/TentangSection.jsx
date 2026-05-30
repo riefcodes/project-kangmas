@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
+import { Hand } from 'lucide-react';
 
 export default function TentangSection() {
   return (
@@ -9,7 +10,7 @@ export default function TentangSection() {
           <div className="flex flex-col lg:flex-row items-center gap-12">
             <div className="lg:w-1/2">
               <div className="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-sm font-semibold text-gray-700 mb-6">
-                 <span>👋</span> Tentang KANGMAS
+                 <Hand className="w-4 h-4" /> Tentang KANGMAS
               </div>
               <h2 className="text-4xl font-bold text-gray-900 leading-tight mb-6">
                 Menghubungkan Anda<br/>Dengan Ahlinya

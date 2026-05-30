@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRightIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
+import { Hand } from 'lucide-react';
 
 export default function HomeSection() {
   return (
@@ -36,7 +37,7 @@ export default function HomeSection() {
             </div>
             <div className="md:w-1/2">
               <div className="inline-flex items-center gap-2 text-primary font-bold text-sm mb-4">
-                <span>👋</span> Selamat Datang Di KANGMAS
+                <Hand className="w-4 h-4" /> Selamat Datang Di KANGMAS
               </div>
               <h2 className="text-4xl font-bold text-gray-900 mb-6 leading-tight">
                 Standar Kualitas & Kepastian Harga

@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
         Route::get('/users', [AdminController::class, 'users']);
         Route::get('/orders', [AdminController::class, 'orders']);
+        Route::get('/tukang/analytics', [AdminController::class, 'tukangAnalytics']);
 
         // Tukang Verification & Management
         Route::get('/tukang/pending', [TukangController::class, 'getPendingTukangs']);

@@ -3,7 +3,7 @@ import { EnvelopeIcon, PhoneIcon, WrenchScrewdriverIcon, Bars3Icon, XMarkIcon } 
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   const navLinks = [
     { name: 'Beranda', path: '#home' },
     { name: 'Tentang Kami', path: '#tentang' },
@@ -24,7 +24,7 @@ export default function Navbar() {
               <WrenchScrewdriverIcon className="h-8 w-8 text-primary" />
               <span className="text-3xl font-bold tracking-tight">KANGMAS</span>
             </div>
-            
+
             {/* Contact Info */}
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-3">
@@ -42,7 +42,7 @@ export default function Navbar() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 font-medium">Kontak Kami</p>
-                  <p className="text-sm font-semibold">+62 813-9266-3985</p>
+                  <p className="text-sm font-semibold">+62 130-0000-000</p>
                 </div>
               </div>
             </div>
@@ -54,7 +54,7 @@ export default function Navbar() {
       <div className="bg-primary">
         <div className="kangmas-container">
           <div className="flex justify-between items-center h-14 md:h-14 lg:h-14">
-            
+
             {/* Mobile Logo (Visible only on mobile) */}
             <div className="flex md:hidden items-center gap-2">
               <WrenchScrewdriverIcon className="h-6 w-6 text-gray-900" />
