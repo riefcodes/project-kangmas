@@ -26,6 +26,9 @@ class TukangProfile extends Model
         'avg_rating',
         'total_reviews',
         'base_price',
+        'ktp_path',
+        'selfie_path',
+        'portofolio_path',
     ];
 
     /**

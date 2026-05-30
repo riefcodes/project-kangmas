@@ -6,6 +6,8 @@ import '../services/api_service.dart';
 import '../models/order_model.dart';
 
 class TukangHomeScreen extends StatefulWidget {
+  const TukangHomeScreen({super.key});
+
   @override
   _TukangHomeScreenState createState() => _TukangHomeScreenState();
 }
@@ -28,7 +30,7 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
     try {
       final res = await ApiService.get('/orders');
       if (res['success']) {
-        final List data = res['data']['data']; 
+        final List data = res['data']['data'];
         setState(() {
           orders = data.map((e) => OrderModel.fromJson(e)).toList();
         });
@@ -70,14 +72,14 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
   }
 
   Future<void> _showCompleteDialog(int orderId) async {
-    final _priceCtl = TextEditingController();
+    final priceCtl = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Selesaikan Pesanan'),
           content: TextField(
-            controller: _priceCtl,
+            controller: priceCtl,
             decoration: const InputDecoration(labelText: 'Total Biaya (Rp)'),
             keyboardType: TextInputType.number,
           ),
@@ -88,7 +90,7 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                final price = int.tryParse(_priceCtl.text);
+                final price = int.tryParse(priceCtl.text);
                 if (price != null && price > 0) {
                   Navigator.pop(context);
                   _updateOrderStatus(orderId, 'completed', price: price);
@@ -131,7 +133,7 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
               Switch(
                 value: isActive,
                 onChanged: (val) => _toggleActive(),
-                activeColor: Colors.green,
+                activeThumbColor: Colors.green,
               ),
             ],
           ),
@@ -195,7 +197,7 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
                                   Text('Kendala: ${order.description}'),
                                   if (order.totalPrice != null)
                                     Text('Total Harga: Rp ${order.totalPrice}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  
+
                                   const SizedBox(height: 16),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,

@@ -5,7 +5,7 @@ import 'create_order_screen.dart';
 class TukangDetailScreen extends StatefulWidget {
   final int tukangId;
 
-  const TukangDetailScreen({Key? key, required this.tukangId}) : super(key: key);
+  const TukangDetailScreen({super.key, required this.tukangId});
 
   @override
   _TukangDetailScreenState createState() => _TukangDetailScreenState();
@@ -26,7 +26,7 @@ class _TukangDetailScreenState extends State<TukangDetailScreen> {
     try {
       final tRes = await ApiService.get('/tukang/${widget.tukangId}');
       final rRes = await ApiService.get('/reviews/tukang/${widget.tukangId}');
-      
+
       if (tRes['success'] && rRes['success']) {
         setState(() {
           tukangData = tRes['data'];
@@ -77,7 +77,7 @@ class _TukangDetailScreenState extends State<TukangDetailScreen> {
                 Text(' ${t['avg_rating']} / 5.0 (${t['total_reviews']} ulasan)', style: const TextStyle(fontSize: 16)),
               ],
             ),
-            
+
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
