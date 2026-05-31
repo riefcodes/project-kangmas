@@ -7,6 +7,8 @@ import 'tukang_detail_screen.dart';
 import 'user_orders_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
+  const UserHomeScreen({super.key});
+
   @override
   _UserHomeScreenState createState() => _UserHomeScreenState();
 }
@@ -29,10 +31,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       // Mock latitude and longitude for Telkom University
       final lat = -6.9730;
       final lng = 107.6307;
-      
+
       final res = await ApiService.get(
           '/recommend?latitude=$lat&longitude=$lng&category=$selectedCategory');
-          
+
       if (res['success']) {
         setState(() {
           recommendations = res['data'];
@@ -91,7 +93,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               }).toList(),
             ),
           ),
-          
+
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
