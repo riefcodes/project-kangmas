@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { WrenchScrewdriverIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import { GoogleMap, useLoadScript, Marker } from '@react-google-maps/api';
-import { MapPin, Check, Camera } from 'lucide-react';
+import { MapPin, Check } from 'lucide-react';
+import CameraCapture from '../components/CameraCapture';
+import '../components/CameraCapture.css';
 
 const mapContainerStyle = {
   width: '100%',
@@ -243,34 +245,19 @@ export default function RegisterTukang({ onSubmit }) {
                 <div className="bg-yellow-50 p-4 rounded text-sm text-yellow-800 border border-yellow-200">
                    Pastikan foto dokumen jelas, tidak terpotong, dan tulisan terbaca sempurna.
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700">Upload Foto KTP (*Wajib)</label>
-                  <div className="mt-1 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                    <input required={!formData.ktp} type="file" accept="image/*" name="ktp" onChange={handleChange} className="flex-grow text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
-                    <button type="button" onClick={() => startCamera('ktp')} className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition">
-                      <Camera className="w-4 h-4" /> Ambil Kamera
-                    </button>
-                  </div>
-                  {formData.ktp && (
-                    <p className="mt-2 text-xs text-green-600 font-bold flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> Dokumen KTP Terlampir: {formData.ktp.name || 'Captured_KTP.png'}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700">Upload Selfie Dengan KTP (*Wajib)</label>
-                  <div className="mt-1 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                    <input required={!formData.selfie} type="file" accept="image/*" name="selfie" onChange={handleChange} className="flex-grow text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
-                    <button type="button" onClick={() => startCamera('selfie')} className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition">
-                      <Camera className="w-4 h-4" /> Ambil Kamera
-                    </button>
-                  </div>
-                  {formData.selfie && (
-                    <p className="mt-2 text-xs text-green-600 font-bold flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> Dokumen Selfie Terlampir: {formData.selfie.name || 'Captured_Selfie.png'}
-                    </p>
-                  )}
-                </div>
+                <CameraCapture
+                  label="Foto KTP (*Wajib)"
+                  name="ktp"
+                  required={!formData.ktp}
+                  initialFacingMode="environment"
+                  onCapture={(file) => setFormData(prev => ({ ...prev, ktp: file }))}
+                />
+                <CameraCapture
+                  label="Selfie Dengan KTP (*Wajib)"
+                  name="selfie"
+                  required={!formData.selfie}
+                  onCapture={(file) => setFormData(prev => ({ ...prev, selfie: file }))}
+                />
               </div>
             )}
 
