@@ -9,7 +9,6 @@ const api = axios.create({
   }
 });
 
-// Interceptor to attach Auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token');
   if (token) {
@@ -20,12 +19,10 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// Interceptor to handle unauthorized access
 api.interceptors.response.use((response) => {
   return response;
 }, (error) => {
   if (error.response && error.response.status === 401) {
-    // If we're an admin, clear token and redirect to login
     if (localStorage.getItem('admin_token')) {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_user');

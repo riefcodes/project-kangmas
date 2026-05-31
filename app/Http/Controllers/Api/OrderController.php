@@ -9,13 +9,6 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    /**
-     * List orders for the authenticated user.
-     *
-     * - Users see their own orders.
-     * - Tukangs see orders assigned to them.
-     * - Admins see all orders.
-     */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -28,7 +21,6 @@ class OrderController extends Controller
         } elseif ($user->role === 'tukang') {
             $query->where('tukang_id', $user->id);
         }
-        // admin → no filter, sees all
 
         $orders = $query->get();
 
@@ -39,9 +31,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Create a new order (user role only).
-     */
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -77,9 +66,6 @@ class OrderController extends Controller
         ], 201);
     }
 
-    /**
-     * Show a single order (owner or assigned tukang only).
-     */
     public function show(Request $request, string $id): JsonResponse
     {
         $user  = $request->user();
@@ -94,7 +80,6 @@ class OrderController extends Controller
             ], 404);
         }
 
-        // Authorization: owner, assigned tukang, or admin
         if ($user->role !== 'admin' && $order->user_id !== $user->id && $order->tukang_id !== $user->id) {
             return response()->json([
                 'success' => false,
@@ -110,12 +95,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Update order status.
-     *
-     * - Tukang can: accepted, completed (+ total_price).
-     * - User can: cancelled.
-     */
     public function update(Request $request, string $id): JsonResponse
     {
         $user  = $request->user();
@@ -129,14 +108,12 @@ class OrderController extends Controller
             ], 404);
         }
 
-        // ── Tukang updates ──────────────────────────────────
         if ($user->role === 'tukang' && $order->tukang_id === $user->id) {
             $validated = $request->validate([
                 'status'      => 'required|in:accepted,completed',
                 'total_price' => 'nullable|integer|min:0',
             ]);
 
-            // Can only accept a pending order
             if ($validated['status'] === 'accepted' && $order->status !== 'pending') {
                 return response()->json([
                     'success' => false,
@@ -145,7 +122,6 @@ class OrderController extends Controller
                 ], 422);
             }
 
-            // Can only complete an accepted order
             if ($validated['status'] === 'completed' && $order->status !== 'accepted') {
                 return response()->json([
                     'success' => false,
@@ -167,7 +143,6 @@ class OrderController extends Controller
             ]);
         }
 
-        // ── User cancellation ──────────────────────────────
         if ($user->role === 'user' && $order->user_id === $user->id) {
             if ($order->status !== 'pending') {
                 return response()->json([
@@ -194,9 +169,6 @@ class OrderController extends Controller
         ], 403);
     }
 
-    /**
-     * Delete an order (user only, pending status only).
-     */
     public function destroy(Request $request, string $id): JsonResponse
     {
         $user  = $request->user();

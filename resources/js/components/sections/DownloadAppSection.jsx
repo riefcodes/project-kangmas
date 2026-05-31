@@ -4,13 +4,11 @@ import { Rocket, Smartphone, Download, Apple, Wrench, Zap } from 'lucide-react';
 export default function DownloadAppSection() {
   return (
     <section id="download-app" className="w-full bg-slate-900 py-20 relative overflow-hidden text-white border-t border-slate-800">
-      {/* Decorative background shapes */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20"></div>
 
       <div className="kangmas-container relative z-10">
         <div className="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700/60 rounded-3xl p-8 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12 shadow-2xl">
-          {/* Text Content */}
           <div className="md:w-3/5 text-left">
             <div className="inline-flex items-center gap-2 bg-primary/20 text-primary border border-primary/40 px-4 py-1.5 rounded-full text-xs font-bold mb-6 tracking-wide uppercase">
               <Rocket className="w-4 h-4" /> KANGMAS Mobile App
@@ -23,7 +21,6 @@ export default function DownloadAppSection() {
               Dapatkan kemudahan memesan tukang profesional, berkonsultasi secara real-time, melacak pengerjaan, dan melakukan pembayaran secara aman hanya melalui aplikasi mobile <strong>KANGMAS</strong>. Unduh sekarang juga!
             </p>
             
-            {/* Download Buttons Group */}
             <div className="flex flex-col sm:flex-row gap-4">
               <button 
                 onClick={() => alert('Fitur unduh aplikasi mobile di Google Play Store segera hadir!')}
@@ -40,13 +37,10 @@ export default function DownloadAppSection() {
             </div>
           </div>
 
-          {/* Visual Smartphone Mockup */}
           <div className="md:w-2/5 flex justify-center relative">
             <div className="w-56 h-[460px] bg-slate-950 border-[6px] border-slate-800 rounded-[3rem] shadow-2xl relative overflow-hidden flex flex-col justify-between p-4">
-              {/* Camera Notch */}
               <div className="w-24 h-4 bg-slate-800 rounded-full mx-auto mb-2"></div>
               
-              {/* App Screen Mockup Content */}
               <div className="flex-grow bg-slate-900 rounded-2xl p-4 flex flex-col justify-between border border-slate-800/80">
                 <div>
                   <div className="text-primary font-black text-xl mb-1 flex items-center gap-1">
@@ -78,7 +72,6 @@ export default function DownloadAppSection() {
               </div>
             </div>
 
-            {/* Glowing accent light behind phone mockup */}
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl -z-10 w-48 h-48 mx-auto my-auto"></div>
           </div>
         </div>

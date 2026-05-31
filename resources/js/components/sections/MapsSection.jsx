@@ -9,7 +9,6 @@ const mapContainerStyle = {
   borderRadius: '1rem',
 };
 
-// Default center: Telkom University Bandung
 const center = {
   lat: -6.974001,
   lng: 107.630348,
@@ -46,7 +45,7 @@ export default function MapsSection() {
 
   return (
     <section id="maps" className="w-full bg-white py-20 border-t border-gray-100">
-      {/* CSS Hack to automatically clean Google Maps overlays & popup alerts */}
+
       <style dangerouslySetInnerHTML={{__html: `
         .gm-err-container, .gm-err-modal, .gm-err-content {
           display: none !important;
@@ -68,7 +67,7 @@ export default function MapsSection() {
         }
       `}} />
 
-      {/* Premium Mobile App Redirect Modal */}
+
       {showMobileAlert && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl text-center border border-gray-100">
@@ -120,7 +119,7 @@ export default function MapsSection() {
             </div>
           ) : (
             <>
-              {/* Optional UI overlay for visual context without valid API Key */}
+
               <div className="absolute top-6 right-6 z-10 bg-white/90 backdrop-blur px-4 py-2 rounded-lg shadow-md border border-gray-200 pointer-events-none">
                  <p className="text-xs font-bold text-gray-800">Menampilkan hasil di:</p>
                  <p className="text-sm font-semibold text-primary">Telkom University, Bandung</p>
@@ -135,16 +134,9 @@ export default function MapsSection() {
                    zoomControl: true,
                 }}
               >
-                {/* Main Marker for Telkom University */}
-                <Marker
-                   position={center}
-                   icon={{
-                      url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png" 
-                   }}
-                />
+
 
                 {tukangList.map((tukang) => {
-                  // Fallback deterministik (berdasarkan ID) agar tidak random berubah-ubah
                   const pseudoRandom = (seed) => {
                      const x = Math.sin(seed) * 10000;
                      return x - Math.floor(x);

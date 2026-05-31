@@ -15,17 +15,14 @@ export default function Navbar() {
 
   return (
     <header className="w-full font-sans sticky top-0 z-50 shadow-md">
-      {/* Top Bar - Hidden on mobile for space */}
       <div className="hidden md:block bg-white text-gray-800 border-b border-gray-100">
         <div className="kangmas-container">
           <div className="flex justify-between items-center h-20">
-            {/* Logo */}
             <div className="flex items-center gap-2">
               <WrenchScrewdriverIcon className="h-8 w-8 text-primary" />
               <span className="text-3xl font-bold tracking-tight">KANGMAS</span>
             </div>
 
-            {/* Contact Info */}
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-3">
                 <div className="bg-primary/20 p-2 rounded-full border border-primary/30">
@@ -50,18 +47,15 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Navigation Bar */}
       <div className="bg-primary">
         <div className="kangmas-container">
           <div className="flex justify-between items-center h-14 md:h-14 lg:h-14">
 
-            {/* Mobile Logo (Visible only on mobile) */}
             <div className="flex md:hidden items-center gap-2">
               <WrenchScrewdriverIcon className="h-6 w-6 text-gray-900" />
               <span className="text-xl font-bold tracking-tight text-gray-900">KANGMAS</span>
             </div>
 
-            {/* Desktop Nav */}
             <nav className="hidden md:flex flex-1 space-x-2">
               {navLinks.map((link) => (
                 <a
@@ -74,7 +68,6 @@ export default function Navbar() {
               ))}
             </nav>
 
-            {/* Desktop Action Buttons */}
             <div className="hidden md:flex gap-2">
               <a href="/admin/login" className="bg-white text-gray-900 px-4 py-2 text-sm font-bold border border-gray-900 hover:bg-gray-100 transition-colors rounded">
                 Login Admin
@@ -84,7 +77,6 @@ export default function Navbar() {
               </a>
             </div>
 
-            {/* Mobile Menu Toggle */}
             <div className="md:hidden flex items-center">
               <button onClick={() => setIsOpen(!isOpen)} className="text-gray-900 hover:text-black p-2">
                 {isOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
@@ -94,7 +86,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
       {isOpen && (
         <div className="md:hidden bg-primary border-t border-yellow-500 absolute w-full shadow-lg">
           <div className="kangmas-container py-4 flex flex-col space-y-2">

@@ -20,11 +20,9 @@ export default function AdminLogin() {
       
       const { user, token } = response.data.data;
 
-      // Store in localStorage
       localStorage.setItem('admin_token', token);
       localStorage.setItem('admin_user', JSON.stringify(user));
 
-      // Redirect to dashboard
       navigate('/admin/dashboard');
     } catch (err) {
       console.error('Login error:', err);

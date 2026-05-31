@@ -59,7 +59,6 @@ export default function LayananSection() {
           </p>
         </div>
 
-        {/* 1 col on mobile, 2 on tablet, 3 on desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
           {services.map((service) => (
             <div key={service.id} className="bg-dark text-white p-8 rounded-xl hover:-translate-y-1 transition duration-300 h-full flex flex-col">

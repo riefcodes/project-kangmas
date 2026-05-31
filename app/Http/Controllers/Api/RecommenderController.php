@@ -9,25 +9,11 @@ use Illuminate\Http\Request;
 
 class RecommenderController extends Controller
 {
-    /**
-     * Maximum search radius in kilometres.
-     */
     private const MAX_RADIUS_KM = 20;
 
-    /**
-     * Weight factors for scoring.
-     */
     private const WEIGHT_RATING   = 0.6;
     private const WEIGHT_DISTANCE = 0.4;
 
-    /**
-     * Return the top 3 recommended Tukangs for a given location and category.
-     *
-     * Query parameters:
-     *  - latitude  (required, float)
-     *  - longitude (required, float)
-     *  - category  (required, string: listrik|air|bangunan)
-     */
     public function recommend(Request $request): JsonResponse
     {
         $request->validate([
@@ -40,22 +26,18 @@ class RecommenderController extends Controller
         $userLng  = (float) $request->query('longitude');
         $category = $request->query('category');
 
-        // Fetch active tukangs in the requested category
         $tukangs = TukangProfile::with('user:id,name,phone_number')
             ->where('category', $category)
             ->where('is_active', true)
             ->get();
 
-        // Calculate distance & score for each tukang
         $scored = $tukangs->map(function (TukangProfile $tukang) use ($userLat, $userLng) {
             $distance = $this->haversine($userLat, $userLng, $tukang->latitude, $tukang->longitude);
 
-            // Skip tukangs outside the max radius
             if ($distance > self::MAX_RADIUS_KM) {
                 return null;
             }
 
-            // Normalised scores (0 – 1)
             $normalizedRating   = $tukang->avg_rating / 5;
             $normalizedDistance  = 1 - ($distance / self::MAX_RADIUS_KM);
 
@@ -78,9 +60,9 @@ class RecommenderController extends Controller
                 'final_score'   => round($finalScore, 4),
             ];
         })
-        ->filter()                         // remove nulls (outside radius)
-        ->sortByDesc('final_score')        // highest score first
-        ->take(3)                          // top 3
+        ->filter()
+        ->sortByDesc('final_score')
+        ->take(3)
         ->values();
 
         return response()->json([
@@ -90,11 +72,6 @@ class RecommenderController extends Controller
         ]);
     }
 
-    /**
-     * Calculate the Haversine distance between two points on Earth.
-     *
-     * @return float Distance in kilometres.
-     */
     private function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
         $earthRadiusKm = 6371;

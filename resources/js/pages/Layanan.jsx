@@ -53,13 +53,11 @@ export default function Layanan() {
 
   return (
     <div className="w-full">
-      {/* Top Banner */}
       <div className="bg-gradient-to-r from-gray-700 to-gray-500 py-20 text-center relative w-full h-[250px] flex items-center justify-center">
          <div className="absolute inset-0 bg-primary/20 mix-blend-multiply"></div>
          <h1 className="text-4xl font-bold text-white relative z-10">Layanan Kami</h1>
       </div>
 
-      {/* Jasa Utama */}
       <div className="bg-primary py-16 -mt-10 relative z-20">
         <div className="kangmas-container text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Jasa Utama KANGMAS</h2>
@@ -76,7 +74,6 @@ export default function Layanan() {
             </button>
           </div>
 
-          {/* Tab Content Card */}
           <div className="bg-white rounded-xl shadow-lg max-w-4xl mx-auto flex flex-col md:flex-row overflow-hidden text-left">
             <div className="p-8 md:w-1/2 flex flex-col justify-center">
               <div className="inline-block bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-semibold mb-4 w-max">
@@ -91,14 +88,12 @@ export default function Layanan() {
               </button>
             </div>
             <div className="md:w-1/2 bg-gray-200">
-               {/* Placeholder for real image */}
               <img src="https://images.unsplash.com/photo-1541888086225-ee5a006db235?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Worker" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Grid Layanan List */}
       <div className="py-20 bg-white">
         <div className="kangmas-container">
           <div className="text-center mb-12">
@@ -126,7 +121,6 @@ export default function Layanan() {
         </div>
       </div>
 
-      {/* Bagaimana Kami Bekerja */}
       <div className="py-20 bg-gray-50">
         <div className="kangmas-container text-center">
             <div className="inline-block text-primary text-sm font-semibold mb-2">Layanan Kami</div>
@@ -140,7 +134,6 @@ export default function Layanan() {
             </h3>
 
             <div className="max-w-4xl mx-auto">
-              {/* Illustration Placeholder */}
               <div className="w-full h-64 bg-gray-200 rounded-2xl mb-10 overflow-hidden flex items-center justify-center">
                  <img src="https://images.unsplash.com/photo-1504307651254-35680f356f12?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Team of builders" className="w-full h-full object-cover" />
               </div>

@@ -6,7 +6,6 @@ import { Hand, Star } from 'lucide-react';
 export default function TentangKami() {
   return (
     <div className="w-full">
-      {/* Hero Section */}
       <div className="bg-white py-16">
         <div className="kangmas-container">
           <div className="flex flex-col lg:flex-row items-center gap-12">
@@ -46,7 +45,6 @@ export default function TentangKami() {
               </div>
             </div>
             <div className="lg:w-1/2 flex justify-center relative">
-               {/* Illustration / Image Placeholder */}
                <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Tukang Professional" className="max-w-md w-full rounded-2xl shadow-xl z-10 relative" />
                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-[120%] bg-gray-100 rounded-full z-0 -rotate-12 blur-3xl opacity-50"></div>
             </div>
@@ -54,7 +52,6 @@ export default function TentangKami() {
         </div>
       </div>
 
-      {/* Stats Section */}
       <div className="bg-gray-50 pb-20">
         <div className="kangmas-container relative z-20 -mt-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -74,7 +71,6 @@ export default function TentangKami() {
         </div>
       </div>
 
-      {/* Ayo Membangun Section */}
       <div className="bg-white py-20 border-t border-gray-100">
         <div className="kangmas-container flex flex-col lg:flex-row gap-16">
           <div className="lg:w-1/2">

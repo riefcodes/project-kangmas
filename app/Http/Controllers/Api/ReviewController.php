@@ -11,13 +11,6 @@ use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
-    /**
-     * Submit a review for a completed order.
-     *
-     * Only the user (customer) who owns the order can review it,
-     * and the order must be in "completed" status.
-     * After storing, auto-recalculates tukang avg_rating & total_reviews.
-     */
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -38,7 +31,6 @@ class ReviewController extends Controller
 
         $order = Order::find($validated['order_id']);
 
-        // Must be the order owner
         if ($order->user_id !== $user->id) {
             return response()->json([
                 'success' => false,
@@ -47,7 +39,6 @@ class ReviewController extends Controller
             ], 403);
         }
 
-        // Order must be completed
         if ($order->status !== 'completed') {
             return response()->json([
                 'success' => false,
@@ -56,7 +47,6 @@ class ReviewController extends Controller
             ], 422);
         }
 
-        // Prevent duplicate reviews
         if ($order->review) {
             return response()->json([
                 'success' => false,
@@ -73,7 +63,6 @@ class ReviewController extends Controller
             'comment'   => $validated['comment'] ?? null,
         ]);
 
-        // ── Recalculate tukang avg_rating ──────────────────
         $this->recalculateTukangRating($order->tukang_id);
 
         $review->load(['user:id,name', 'order:id,description']);
@@ -85,9 +74,6 @@ class ReviewController extends Controller
         ], 201);
     }
 
-    /**
-     * List all reviews for a specific tukang (public).
-     */
     public function byTukang(string $tukangId): JsonResponse
     {
         $profile = TukangProfile::where('user_id', $tukangId)->first();
@@ -117,9 +103,6 @@ class ReviewController extends Controller
         ]);
     }
 
-    /**
-     * Recalculate avg_rating and total_reviews for a tukang.
-     */
     private function recalculateTukangRating(int $tukangUserId): void
     {
         $reviews = Review::where('tukang_id', $tukangUserId);

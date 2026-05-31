@@ -16,12 +16,6 @@ const defaultCenter = {
   lng: 107.630348,
 };
 
-/**
- * RegisterTukang — Pure UI Component (Multi-step Registration Form)
- * 
- * @param {Function} onSubmit - Callback when form is submitted. Receives FormData object.
- *                               Default: mock that simulates success (goes to step 5).
- */
 export default function RegisterTukang({ onSubmit }) {
   const navigate = useNavigate();
   const { isLoaded, loadError } = useLoadScript({
@@ -79,7 +73,6 @@ export default function RegisterTukang({ onSubmit }) {
          }
       });
 
-      // API Call to register tukang
       await api.post('/tukang/register', data, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -90,7 +83,6 @@ export default function RegisterTukang({ onSubmit }) {
         await onSubmit(data);
       }
       
-      // Go to success step
       setStep(5);
     } catch (error) {
       console.error('Registration error:', error);
@@ -103,12 +95,10 @@ export default function RegisterTukang({ onSubmit }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pt-10 pb-12 sm:px-6 lg:px-8 relative">
-      {/* Tombol Back Explicit */}
       <button onClick={() => navigate('/')} className="absolute top-6 left-6 flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-primary transition bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 z-10">
          &larr; Kembali ke Beranda
       </button>
 
-      {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center gap-2 items-center text-primary mb-6 text-4xl font-extrabold cursor-pointer" onClick={() => navigate('/')}>
            <WrenchScrewdriverIcon className="h-10 w-10 text-gray-900" />
@@ -124,7 +114,6 @@ export default function RegisterTukang({ onSubmit }) {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
         <div className="bg-white py-8 px-4 shadow sm:rounded-xl sm:px-10 border border-gray-100">
           
-          {/* Progress Indicator */}
           {step < 5 && (
             <div className="mb-8 border-b border-gray-100 pb-6">
               <div className="flex justify-between items-center text-xs font-bold text-gray-400">
@@ -141,7 +130,6 @@ export default function RegisterTukang({ onSubmit }) {
 
           <form onSubmit={step === 4 ? handleSubmit : (e) => { e.preventDefault(); nextStep(); }}>
             
-            {/* STEP 1: Data Diri */}
             {step === 1 && (
               <div className="space-y-5 flex flex-col animate-fadeIn">
                 <div>
@@ -163,7 +151,6 @@ export default function RegisterTukang({ onSubmit }) {
               </div>
             )}
 
-            {/* STEP 2: Data Keahlian */}
             {step === 2 && (
               <div className="space-y-5 animate-fadeIn">
                 <div>
@@ -187,7 +174,6 @@ export default function RegisterTukang({ onSubmit }) {
               </div>
             )}
 
-            {/* STEP 3: Verifikasi Dokumen */}
             {step === 3 && (
               <div className="space-y-6 animate-fadeIn">
                 <div className="bg-yellow-50 p-4 rounded text-sm text-yellow-800 border border-yellow-200">
@@ -204,7 +190,6 @@ export default function RegisterTukang({ onSubmit }) {
               </div>
             )}
 
-            {/* STEP 4: Lokasi */}
             {step === 4 && (
               <div className="space-y-6 animate-fadeIn">
                  <div>
@@ -263,7 +248,6 @@ export default function RegisterTukang({ onSubmit }) {
               </div>
             )}
 
-            {/* STEP 5: Status Submit */}
             {step === 5 && (
                <div className="text-center py-6 animate-fadeIn">
                   <div className="mb-4 flex justify-center">
@@ -286,7 +270,6 @@ export default function RegisterTukang({ onSubmit }) {
                </div>
             )}
 
-            {/* Navigation Buttons */}
             {step < 5 && (
               <div className="mt-8 flex gap-3 pt-5 border-t border-gray-200">
                 {step > 1 && (
