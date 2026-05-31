@@ -4,6 +4,8 @@ import { WrenchScrewdriverIcon, CheckCircleIcon } from '@heroicons/react/24/outl
 import api from '../services/api';
 import { GoogleMap, useLoadScript, Marker } from '@react-google-maps/api';
 import { MapPin, Check } from 'lucide-react';
+import CameraCapture from '../components/CameraCapture';
+import '../components/CameraCapture.css';
 
 const mapContainerStyle = {
   width: '100%',
@@ -179,14 +181,19 @@ export default function RegisterTukang({ onSubmit }) {
                 <div className="bg-yellow-50 p-4 rounded text-sm text-yellow-800 border border-yellow-200">
                    Pastikan foto dokumen jelas, tidak terpotong, dan tulisan terbaca sempurna.
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700">Upload Foto KTP (*Wajib)</label>
-                  <input required type="file" accept="image/*" name="ktp" onChange={handleChange} className="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700">Upload Selfie Dengan KTP (*Wajib)</label>
-                  <input required type="file" accept="image/*" name="selfie" onChange={handleChange} className="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
-                </div>
+                <CameraCapture
+                  label="Foto KTP (*Wajib)"
+                  name="ktp"
+                  required={!formData.ktp}
+                  initialFacingMode="environment"
+                  onCapture={(file) => setFormData(prev => ({ ...prev, ktp: file }))}
+                />
+                <CameraCapture
+                  label="Selfie Dengan KTP (*Wajib)"
+                  name="selfie"
+                  required={!formData.selfie}
+                  onCapture={(file) => setFormData(prev => ({ ...prev, selfie: file }))}
+                />
               </div>
             )}
 
