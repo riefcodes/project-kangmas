@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { WrenchScrewdriverIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import { GoogleMap, useLoadScript, Marker } from '@react-google-maps/api';
-import { MapPin, Check } from 'lucide-react';
+import { MapPin, Check, Camera } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -30,12 +30,76 @@ export default function RegisterTukang({ onSubmit }) {
     locationType: 'manual', locationDetail: '', lat: null, lng: null
   });
 
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraTarget, setCameraTarget] = useState('');
+  const [cameraStream, setCameraStream] = useState(null);
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: files ? files[0] : value
     }));
+  };
+
+  const startCamera = async (target) => {
+    setCameraTarget(target);
+    setCameraActive(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: target === 'ktp' ? 'environment' : 'user' } 
+      });
+      setCameraStream(stream);
+      setTimeout(() => {
+        const videoEl = document.getElementById('camera-preview');
+        if (videoEl) {
+          videoEl.srcObject = stream;
+        }
+      }, 100);
+    } catch (err) {
+      console.error("Gagal membuka kamera:", err);
+      alert("Tidak dapat mengakses kamera. Pastikan izin kamera telah diaktifkan.");
+      setCameraActive(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    const videoEl = document.getElementById('camera-preview');
+    if (!videoEl) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoEl.videoWidth || 640;
+    canvas.height = videoEl.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], `${cameraTarget}_capture.png`, { type: 'image/png' });
+        
+        setFormData(prev => ({
+          ...prev,
+          [cameraTarget]: file
+        }));
+
+        const container = new DataTransfer();
+        container.items.add(file);
+        const inputEl = document.getElementsByName(cameraTarget)[0];
+        if (inputEl) {
+          inputEl.files = container.files;
+        }
+
+        stopCamera();
+      }
+    }, 'image/png');
   };
 
   const nextStep = () => setStep(prev => prev + 1);
@@ -181,11 +245,31 @@ export default function RegisterTukang({ onSubmit }) {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Upload Foto KTP (*Wajib)</label>
-                  <input required type="file" accept="image/*" name="ktp" onChange={handleChange} className="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
+                  <div className="mt-1 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                    <input required={!formData.ktp} type="file" accept="image/*" name="ktp" onChange={handleChange} className="flex-grow text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
+                    <button type="button" onClick={() => startCamera('ktp')} className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition">
+                      <Camera className="w-4 h-4" /> Ambil Kamera
+                    </button>
+                  </div>
+                  {formData.ktp && (
+                    <p className="mt-2 text-xs text-green-600 font-bold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Dokumen KTP Terlampir: {formData.ktp.name || 'Captured_KTP.png'}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">Upload Selfie Dengan KTP (*Wajib)</label>
-                  <input required type="file" accept="image/*" name="selfie" onChange={handleChange} className="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
+                  <div className="mt-1 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                    <input required={!formData.selfie} type="file" accept="image/*" name="selfie" onChange={handleChange} className="flex-grow text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
+                    <button type="button" onClick={() => startCamera('selfie')} className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition">
+                      <Camera className="w-4 h-4" /> Ambil Kamera
+                    </button>
+                  </div>
+                  {formData.selfie && (
+                    <p className="mt-2 text-xs text-green-600 font-bold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Dokumen Selfie Terlampir: {formData.selfie.name || 'Captured_Selfie.png'}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -293,6 +377,43 @@ export default function RegisterTukang({ onSubmit }) {
           </form>
         </div>
       </div>
+      {cameraActive && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-[100] p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full text-center relative shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-4 uppercase tracking-wider">
+              Ambil Foto {cameraTarget === 'ktp' ? 'KTP' : 'Selfie'}
+            </h3>
+            
+            <div className="relative bg-black rounded-xl overflow-hidden aspect-video border border-slate-800 mb-6 flex items-center justify-center">
+              <video 
+                id="camera-preview" 
+                autoPlay 
+                playsInline 
+                muted
+                className="w-full h-full object-cover scale-x-[-1]" 
+                style={cameraTarget === 'ktp' ? { transform: 'scaleX(1)' } : {}}
+              />
+            </div>
+
+            <div className="flex gap-4 justify-center">
+              <button 
+                type="button"
+                onClick={capturePhoto}
+                className="bg-primary hover:bg-primary-hover text-gray-900 font-bold px-6 py-2.5 rounded-xl transition text-sm shadow-md"
+              >
+                Ambil Foto
+              </button>
+              <button 
+                type="button"
+                onClick={stopCamera}
+                className="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-6 py-2.5 rounded-xl transition text-sm border border-slate-700"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
