@@ -11,7 +11,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
   const [facingMode, setFacingMode] = useState(initialFacingMode || 'user');
   const [stream, setStream] = useState(null);
   const [error, setError] = useState(null);
-  const [mode, setMode] = useState('choose'); // 'choose' | 'camera' | 'file'
+  const [mode, setMode] = useState('choose');
 
   const stopCamera = useCallback(() => {
     if (stream) {
@@ -21,7 +21,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
     setIsCameraOpen(false);
   }, [stream]);
 
-  // Cleanup on unmount
+
   useEffect(() => {
     return () => {
       if (stream) {
@@ -33,7 +33,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
   const startCamera = useCallback(async (facing = facingMode) => {
     setError(null);
     try {
-      // Stop existing stream first
+
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
@@ -52,7 +52,6 @@ export default function CameraCapture({ onCapture, label, required = false, name
       setIsCameraOpen(true);
       setMode('camera');
 
-      // Wait for ref to be available
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
@@ -87,7 +86,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
 
     const ctx = canvas.getContext('2d');
 
-    // Mirror the image if using front camera
+
     if (facingMode === 'user') {
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
@@ -95,7 +94,6 @@ export default function CameraCapture({ onCapture, label, required = false, name
 
     ctx.drawImage(video, 0, 0);
 
-    // Convert to blob/file
     canvas.toBlob((blob) => {
       const file = new File([blob], `${name || 'selfie'}_${Date.now()}.jpg`, {
         type: 'image/jpeg',
@@ -255,7 +253,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
           type="text"
           required
           value=""
-          onChange={() => {}}
+          onChange={() => { }}
           className="camera-hidden-required"
           tabIndex={-1}
           aria-hidden="true"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { Smartphone, Download, Star } from 'lucide-react';
 
 const mapContainerStyle = {
@@ -19,34 +19,35 @@ export default function MapsSection() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-     fetchTukangs();
+    fetchTukangs();
   }, []);
 
   const fetchTukangs = async () => {
-     try {
-        const res = await api.get('/tukang');
-        setTukangList(res.data.data);
-     } catch (error) {
-        console.error('Error fetching map data:', error);
-     } finally {
-        setLoading(false);
-     }
+    try {
+      const res = await api.get('/tukang');
+      setTukangList(res.data.data);
+    } catch (error) {
+      console.error('Error fetching map data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '', 
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
   });
 
   const [selectedTukang, setSelectedTukang] = useState(null);
   const [showMobileAlert, setShowMobileAlert] = useState(false);
 
   const getStatusColor = (status) => {
-     return status === 'Available' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+    return status === 'Available' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
   }
 
   return (
     <section id="maps" className="w-full bg-white py-20 border-t border-gray-100">
 
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .gm-err-container, .gm-err-modal, .gm-err-content {
           display: none !important;
         }
@@ -79,7 +80,7 @@ export default function MapsSection() {
               Untuk melakukan pemesanan jasa tukang secara praktis, memantau posisi tukang secara real-time, dan bertransaksi dengan aman, silakan gunakan aplikasi mobile <strong>KANGMAS</strong>!
             </p>
             <div className="flex flex-col gap-2.5">
-              <button 
+              <button
                 onClick={() => {
                   alert('Fitur download aplikasi mobile segera hadir di Google Play Store!');
                   setShowMobileAlert(false);
@@ -88,7 +89,7 @@ export default function MapsSection() {
               >
                 <Download className="w-4 h-4" /> Unduh untuk Android (.APK)
               </button>
-              <button 
+              <button
                 onClick={() => setShowMobileAlert(false)}
                 className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl transition text-xs"
               >
@@ -121,8 +122,8 @@ export default function MapsSection() {
             <>
 
               <div className="absolute top-6 right-6 z-10 bg-white/90 backdrop-blur px-4 py-2 rounded-lg shadow-md border border-gray-200 pointer-events-none">
-                 <p className="text-xs font-bold text-gray-800">Menampilkan hasil di:</p>
-                 <p className="text-sm font-semibold text-primary">Telkom University, Bandung</p>
+                <p className="text-xs font-bold text-gray-800">Menampilkan hasil di:</p>
+                <p className="text-sm font-semibold text-primary">Telkom University, Bandung</p>
               </div>
 
               <GoogleMap
@@ -130,39 +131,45 @@ export default function MapsSection() {
                 zoom={15}
                 center={center}
                 options={{
-                   disableDefaultUI: true,
-                   zoomControl: true,
+                  disableDefaultUI: true,
+                  zoomControl: true,
                 }}
               >
 
 
                 {tukangList.map((tukang) => {
                   const pseudoRandom = (seed) => {
-                     const x = Math.sin(seed) * 10000;
-                     return x - Math.floor(x);
+                    const x = Math.sin(seed) * 10000;
+                    return x - Math.floor(x);
                   };
-                  
-                  const hasValidCoords = tukang.lat && tukang.lng && parseFloat(tukang.lat) !== 0;
-                  
-                  const posLat = hasValidCoords 
-                      ? parseFloat(tukang.lat) 
-                      : center.lat + (pseudoRandom(tukang.id) - 0.5) * 0.015;
-                  
-                  const posLng = hasValidCoords 
-                      ? parseFloat(tukang.lng) 
-                      : center.lng + (pseudoRandom(tukang.id + 100) - 0.5) * 0.015;
-                  
+
+                  const latVal = parseFloat(tukang.lat);
+                  const lngVal = parseFloat(tukang.lng);
+                  const hasValidCoords = !isNaN(latVal) && !isNaN(lngVal) && latVal !== 0 && lngVal !== 0;
+
+                  const isNearCenter = hasValidCoords &&
+                    Math.abs(latVal - center.lat) < 0.03 &&
+                    Math.abs(lngVal - center.lng) < 0.03;
+
+                  const posLat = isNearCenter
+                    ? latVal
+                    : center.lat + (pseudoRandom(tukang.id) - 0.5) * 0.015;
+
+                  const posLng = isNearCenter
+                    ? lngVal
+                    : center.lng + (pseudoRandom(tukang.id + 100) - 0.5) * 0.015;
+
                   return (
-                    <Marker
+                    <MarkerF
                       key={tukang.id}
                       position={{ lat: posLat, lng: posLng }}
-                      onClick={() => setSelectedTukang({...tukang, lat: posLat, lng: posLng, rating: tukang.rating || 4.5, status: tukang.status || 'Available'})}
+                      onClick={() => setSelectedTukang({ ...tukang, lat: posLat, lng: posLng, rating: tukang.rating || 4.5, status: tukang.status || 'Available' })}
                     />
                   );
                 })}
 
                 {selectedTukang && (
-                  <InfoWindow
+                  <InfoWindowF
                     position={{ lat: selectedTukang.lat, lng: selectedTukang.lng }}
                     onCloseClick={() => setSelectedTukang(null)}
                   >
@@ -174,23 +181,22 @@ export default function MapsSection() {
                       </div>
 
                       <div className="mt-3 flex items-center gap-2">
-                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</span>
-                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${getStatusColor(selectedTukang.status)}`}>
-                            {selectedTukang.status}
-                         </span>
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${getStatusColor(selectedTukang.status)}`}>
+                          {selectedTukang.status}
+                        </span>
                       </div>
 
-                      <button 
+                      <button
                         onClick={() => setShowMobileAlert(true)}
                         disabled={selectedTukang.status === 'Busy'}
-                        className={`mt-4 w-full font-bold py-1.5 rounded text-sm transition ${
-                           selectedTukang.status === 'Available' ? 'bg-primary text-gray-900 hover:bg-primary-hover' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
+                        className={`mt-4 w-full font-bold py-1.5 rounded text-sm transition ${selectedTukang.status === 'Available' ? 'bg-primary text-gray-900 hover:bg-primary-hover' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
                       >
                         {selectedTukang.status === 'Available' ? 'Pesan Sekarang' : 'Tukang Sibuk'}
                       </button>
                     </div>
-                  </InfoWindow>
+                  </InfoWindowF>
                 )}
               </GoogleMap>
             </>
