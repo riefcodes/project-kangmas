@@ -13,12 +13,9 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<LandingPage />} />
         </Route>
-        
-        {/* Admin Routes */}
         <Route path="/admin">
            <Route path="login" element={<AdminLogin />} />
            
-           {/* Protected Admin Routes */}
            <Route element={<ProtectedRoute />}>
               <Route path="dashboard" element={<AdminDashboard />} />
            </Route>

@@ -1,0 +1,341 @@
+/* ===== Camera Capture Component Styles ===== */
+
+.camera-capture-wrapper {
+  position: relative;
+}
+
+/* Choose mode - two option buttons */
+.camera-choose-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.camera-option-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 1.25rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px dashed;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: transparent;
+}
+
+.camera-option-camera {
+  border-color: #e5a617;
+  color: #92660d;
+  background: #fffbeb;
+}
+.camera-option-camera:hover {
+  background: #fef3c7;
+  border-color: #d49a10;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(229, 166, 23, 0.15);
+}
+
+.camera-option-file {
+  border-color: #d1d5db;
+  color: #4b5563;
+  background: #f9fafb;
+}
+.camera-option-file:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.camera-option-sub {
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+/* Camera preview container */
+.camera-preview-container {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #111827;
+}
+
+/* Live camera view */
+.camera-live-view {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #000;
+}
+
+.camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Guide overlay - shared */
+.camera-guide-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ===== KTP Guide: landscape card rectangle ===== */
+.camera-guide-ktp-frame {
+  width: 80%;
+  aspect-ratio: 85.6 / 53.98; /* standard ID card ratio */
+  border: 2.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 0.75rem;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+.camera-guide-ktp-frame::before,
+.camera-guide-ktp-frame::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: #fff;
+  border-style: solid;
+}
+/* Corner accents top-left & top-right */
+.camera-guide-ktp-frame::before {
+  top: -1px;
+  left: -1px;
+  border-width: 3px 0 0 3px;
+  border-radius: 0.75rem 0 0 0;
+}
+.camera-guide-ktp-frame::after {
+  top: -1px;
+  right: -1px;
+  border-width: 3px 3px 0 0;
+  border-radius: 0 0.75rem 0 0;
+}
+
+/* ===== Selfie Guide: face circle + KTP card ===== */
+.camera-guide-selfie-layout {
+  justify-content: flex-start;
+  padding-top: 5%;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.camera-guide-face-circle {
+  width: 40%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2.5px dashed rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 
+    0 0 0 4px rgba(0, 0, 0, 0.15),
+    inset 0 0 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Small label inside the circle */
+.camera-guide-face-circle::after {
+  content: 'Wajah';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.camera-guide-ktp-small {
+  width: 60%;
+  aspect-ratio: 85.6 / 53.98;
+  border: 2.5px solid rgba(255, 255, 255, 0.75);
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Small label inside the KTP rectangle */
+.camera-guide-ktp-small::after {
+  content: 'KTP';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.camera-guide-text {
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+/* Camera control bar */
+.camera-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: #111827;
+}
+
+.camera-ctrl-btn {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.camera-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+.camera-ctrl-cancel:hover {
+  background: rgba(239, 68, 68, 0.6);
+}
+
+/* Big capture button */
+.camera-capture-btn {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: transparent;
+  border: 3px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.15s ease;
+}
+.camera-capture-btn:hover {
+  transform: scale(1.08);
+}
+.camera-capture-btn:active {
+  transform: scale(0.95);
+}
+
+.camera-capture-btn-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #fff;
+  transition: background 0.15s;
+}
+.camera-capture-btn:hover .camera-capture-btn-inner {
+  background: #e5e7eb;
+}
+
+/* Captured result */
+.camera-captured-result {
+  position: relative;
+}
+
+.camera-captured-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.camera-captured-badge {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(22, 163, 74, 0.9);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  backdrop-filter: blur(4px);
+}
+
+/* Action buttons under captured image */
+.camera-action-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+}
+
+.camera-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid;
+}
+
+.camera-btn-retake {
+  background: #fff;
+  color: #374151;
+  border-color: #d1d5db;
+}
+.camera-btn-retake:hover {
+  background: #f3f4f6;
+}
+
+.camera-btn-cancel {
+  background: #fff;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.camera-btn-cancel:hover {
+  background: #fef2f2;
+}
+
+/* Hidden required input for form validation */
+.camera-hidden-required {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+  opacity: 0;
+}

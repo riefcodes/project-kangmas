@@ -12,9 +12,6 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
-    /**
-     * Register a new user or tukang.
-     */
     public function register(Request $request): JsonResponse
     {
         $rules = [
@@ -25,7 +22,6 @@ class AuthController extends Controller
             'phone_number'          => 'nullable|string|max:20',
         ];
 
-        // Extra validation for tukang role
         if ($request->input('role') === 'tukang') {
             $rules['category']   = 'required|in:listrik,air,bangunan';
             $rules['latitude']   = 'required|numeric|between:-90,90';
@@ -36,7 +32,6 @@ class AuthController extends Controller
 
         $validated = $request->validate($rules);
 
-        // Create user
         $user = User::create([
             'name'         => $validated['name'],
             'email'        => $validated['email'],
@@ -45,7 +40,6 @@ class AuthController extends Controller
             'phone_number' => $validated['phone_number'] ?? null,
         ]);
 
-        // Create tukang profile if registering as tukang
         if ($validated['role'] === 'tukang') {
             TukangProfile::create([
                 'user_id'    => $user->id,
@@ -69,9 +63,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    /**
-     * Login and issue API token.
-     */
     public function login(Request $request): JsonResponse
     {
         $request->validate([
@@ -101,9 +92,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Logout – revoke current token.
-     */
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
@@ -115,9 +103,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Get authenticated user profile.
-     */
     public function me(Request $request): JsonResponse
     {
         $user = $request->user()->load('tukangProfile');

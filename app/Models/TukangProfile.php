@@ -7,11 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TukangProfile extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'user_id',
         'category',
@@ -32,11 +27,6 @@ class TukangProfile extends Model
         'portofolio_path',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -47,9 +37,6 @@ class TukangProfile extends Model
         ];
     }
 
-    /**
-     * Get the user that owns this tukang profile.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

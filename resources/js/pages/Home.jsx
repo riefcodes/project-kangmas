@@ -6,10 +6,8 @@ import { Hand, BadgeCheck } from 'lucide-react';
 export default function Home() {
   return (
     <div className="w-full">
-      {/* Hero Section */}
       <div className="bg-gradient-to-br from-gray-900 to-gray-800 py-20 relative overflow-hidden text-white h-[600px] flex items-center">
         <div className="absolute inset-0 bg-black/40 z-10"></div>
-        {/* Background Image Placeholder */}
         <img src="https://images.unsplash.com/photo-1541888086225-ee5a006db235?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80" alt="Background" className="absolute inset-0 w-full h-full object-cover z-0" />
 
         <div className="kangmas-container relative z-20 flex flex-col md:flex-row items-center">
@@ -27,7 +25,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Feature / Highlight */}
       <div className="bg-white py-20">
         <div className="kangmas-container flex flex-col md:flex-row items-center gap-12">
           <div className="md:w-1/2 flex justify-center">
@@ -55,7 +52,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Mengapa Kami */}
       <div className="bg-gray-50 py-20">
         <div className="kangmas-container flex flex-col md:flex-row gap-12">
           <div className="md:w-1/2 relative">

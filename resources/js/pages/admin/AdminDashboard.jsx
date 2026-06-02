@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { FileText, FolderOpen, IdCard, MapPin, Star, ClipboardList, ShoppingBag, Calendar, DollarSign, User as UserIcon } from 'lucide-react';
 
-// Modal untuk menampilkan dokumen tukang
 function DocumentModal({ tukang, onClose }) {
   if (!tukang) return null;
 
@@ -21,7 +20,6 @@ function DocumentModal({ tukang, onClose }) {
         className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header modal */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Detail & Dokumen Pendaftar</h2>
@@ -37,7 +35,6 @@ function DocumentModal({ tukang, onClose }) {
           </button>
         </div>
 
-        {/* Detail Informasi */}
         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Informasi Lengkap Pendaftaran</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
@@ -85,7 +82,6 @@ function DocumentModal({ tukang, onClose }) {
           </div>
         </div>
 
-        {/* Isi dokumen */}
         <div className="p-6 grid gap-6">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Berkas Dokumen Lampiran</h3>
           {docs.map(doc => (
@@ -138,7 +134,7 @@ export default function AdminDashboard() {
   const [analyticsData, setAnalyticsData] = useState([]);
   const [ordersData, setOrdersData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTukang, setSelectedTukang] = useState(null); // untuk modal dokumen
+  const [selectedTukang, setSelectedTukang] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -237,12 +233,10 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex pb-10">
-      {/* Modal Dokumen */}
       {selectedTukang && (
         <DocumentModal tukang={selectedTukang} onClose={() => setSelectedTukang(null)} />
       )}
 
-      {/* Sidebar */}
       <div className="w-64 bg-slate-900 text-white p-6">
         <h2 className="text-2xl font-bold mb-8 text-primary">Admin Panel</h2>
         <nav className="space-y-4">
@@ -273,7 +267,6 @@ export default function AdminDashboard() {
         </nav>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 p-10">
         <div className="flex justify-between items-center mb-10">
           <h1 className="text-3xl font-bold text-gray-800">

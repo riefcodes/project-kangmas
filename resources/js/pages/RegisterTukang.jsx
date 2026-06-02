@@ -4,6 +4,8 @@ import { WrenchScrewdriverIcon, CheckCircleIcon } from '@heroicons/react/24/outl
 import api from '../services/api';
 import { GoogleMap, useLoadScript, Marker } from '@react-google-maps/api';
 import { MapPin, Check } from 'lucide-react';
+import CameraCapture from '../components/CameraCapture';
+import '../components/CameraCapture.css';
 
 const mapContainerStyle = {
   width: '100%',
@@ -16,12 +18,6 @@ const defaultCenter = {
   lng: 107.630348,
 };
 
-/**
- * RegisterTukang — Pure UI Component (Multi-step Registration Form)
- * 
- * @param {Function} onSubmit - Callback when form is submitted. Receives FormData object.
- *                               Default: mock that simulates success (goes to step 5).
- */
 export default function RegisterTukang({ onSubmit }) {
   const navigate = useNavigate();
   const { isLoaded, loadError } = useLoadScript({
@@ -36,12 +32,76 @@ export default function RegisterTukang({ onSubmit }) {
     locationType: 'manual', locationDetail: '', lat: null, lng: null
   });
 
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraTarget, setCameraTarget] = useState('');
+  const [cameraStream, setCameraStream] = useState(null);
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: files ? files[0] : value
     }));
+  };
+
+  const startCamera = async (target) => {
+    setCameraTarget(target);
+    setCameraActive(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: target === 'ktp' ? 'environment' : 'user' } 
+      });
+      setCameraStream(stream);
+      setTimeout(() => {
+        const videoEl = document.getElementById('camera-preview');
+        if (videoEl) {
+          videoEl.srcObject = stream;
+        }
+      }, 100);
+    } catch (err) {
+      console.error("Gagal membuka kamera:", err);
+      alert("Tidak dapat mengakses kamera. Pastikan izin kamera telah diaktifkan.");
+      setCameraActive(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    const videoEl = document.getElementById('camera-preview');
+    if (!videoEl) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoEl.videoWidth || 640;
+    canvas.height = videoEl.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], `${cameraTarget}_capture.png`, { type: 'image/png' });
+        
+        setFormData(prev => ({
+          ...prev,
+          [cameraTarget]: file
+        }));
+
+        const container = new DataTransfer();
+        container.items.add(file);
+        const inputEl = document.getElementsByName(cameraTarget)[0];
+        if (inputEl) {
+          inputEl.files = container.files;
+        }
+
+        stopCamera();
+      }
+    }, 'image/png');
   };
 
   const nextStep = () => setStep(prev => prev + 1);
@@ -79,7 +139,6 @@ export default function RegisterTukang({ onSubmit }) {
          }
       });
 
-      // API Call to register tukang
       await api.post('/tukang/register', data, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -90,7 +149,6 @@ export default function RegisterTukang({ onSubmit }) {
         await onSubmit(data);
       }
       
-      // Go to success step
       setStep(5);
     } catch (error) {
       console.error('Registration error:', error);
@@ -103,12 +161,10 @@ export default function RegisterTukang({ onSubmit }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pt-10 pb-12 sm:px-6 lg:px-8 relative">
-      {/* Tombol Back Explicit */}
       <button onClick={() => navigate('/')} className="absolute top-6 left-6 flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-primary transition bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 z-10">
          &larr; Kembali ke Beranda
       </button>
 
-      {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center gap-2 items-center text-primary mb-6 text-4xl font-extrabold cursor-pointer" onClick={() => navigate('/')}>
            <WrenchScrewdriverIcon className="h-10 w-10 text-gray-900" />
@@ -124,7 +180,6 @@ export default function RegisterTukang({ onSubmit }) {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
         <div className="bg-white py-8 px-4 shadow sm:rounded-xl sm:px-10 border border-gray-100">
           
-          {/* Progress Indicator */}
           {step < 5 && (
             <div className="mb-8 border-b border-gray-100 pb-6">
               <div className="flex justify-between items-center text-xs font-bold text-gray-400">
@@ -141,7 +196,6 @@ export default function RegisterTukang({ onSubmit }) {
 
           <form onSubmit={step === 4 ? handleSubmit : (e) => { e.preventDefault(); nextStep(); }}>
             
-            {/* STEP 1: Data Diri */}
             {step === 1 && (
               <div className="space-y-5 flex flex-col animate-fadeIn">
                 <div>
@@ -163,7 +217,6 @@ export default function RegisterTukang({ onSubmit }) {
               </div>
             )}
 
-            {/* STEP 2: Data Keahlian */}
             {step === 2 && (
               <div className="space-y-5 animate-fadeIn">
                 <div>
@@ -187,24 +240,27 @@ export default function RegisterTukang({ onSubmit }) {
               </div>
             )}
 
-            {/* STEP 3: Verifikasi Dokumen */}
             {step === 3 && (
               <div className="space-y-6 animate-fadeIn">
                 <div className="bg-yellow-50 p-4 rounded text-sm text-yellow-800 border border-yellow-200">
                    Pastikan foto dokumen jelas, tidak terpotong, dan tulisan terbaca sempurna.
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700">Upload Foto KTP (*Wajib)</label>
-                  <input required type="file" accept="image/*" name="ktp" onChange={handleChange} className="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700">Upload Selfie Dengan KTP (*Wajib)</label>
-                  <input required type="file" accept="image/*" name="selfie" onChange={handleChange} className="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 border border-gray-200 p-1" />
-                </div>
+                <CameraCapture
+                  label="Foto KTP (*Wajib)"
+                  name="ktp"
+                  required={!formData.ktp}
+                  initialFacingMode="environment"
+                  onCapture={(file) => setFormData(prev => ({ ...prev, ktp: file }))}
+                />
+                <CameraCapture
+                  label="Selfie Dengan KTP (*Wajib)"
+                  name="selfie"
+                  required={!formData.selfie}
+                  onCapture={(file) => setFormData(prev => ({ ...prev, selfie: file }))}
+                />
               </div>
             )}
 
-            {/* STEP 4: Lokasi */}
             {step === 4 && (
               <div className="space-y-6 animate-fadeIn">
                  <div>
@@ -263,7 +319,6 @@ export default function RegisterTukang({ onSubmit }) {
               </div>
             )}
 
-            {/* STEP 5: Status Submit */}
             {step === 5 && (
                <div className="text-center py-6 animate-fadeIn">
                   <div className="mb-4 flex justify-center">
@@ -286,7 +341,6 @@ export default function RegisterTukang({ onSubmit }) {
                </div>
             )}
 
-            {/* Navigation Buttons */}
             {step < 5 && (
               <div className="mt-8 flex gap-3 pt-5 border-t border-gray-200">
                 {step > 1 && (
@@ -310,6 +364,43 @@ export default function RegisterTukang({ onSubmit }) {
           </form>
         </div>
       </div>
+      {cameraActive && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-[100] p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full text-center relative shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-4 uppercase tracking-wider">
+              Ambil Foto {cameraTarget === 'ktp' ? 'KTP' : 'Selfie'}
+            </h3>
+            
+            <div className="relative bg-black rounded-xl overflow-hidden aspect-video border border-slate-800 mb-6 flex items-center justify-center">
+              <video 
+                id="camera-preview" 
+                autoPlay 
+                playsInline 
+                muted
+                className="w-full h-full object-cover scale-x-[-1]" 
+                style={cameraTarget === 'ktp' ? { transform: 'scaleX(1)' } : {}}
+              />
+            </div>
+
+            <div className="flex gap-4 justify-center">
+              <button 
+                type="button"
+                onClick={capturePhoto}
+                className="bg-primary hover:bg-primary-hover text-gray-900 font-bold px-6 py-2.5 rounded-xl transition text-sm shadow-md"
+              >
+                Ambil Foto
+              </button>
+              <button 
+                type="button"
+                onClick={stopCamera}
+                className="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-6 py-2.5 rounded-xl transition text-sm border border-slate-700"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

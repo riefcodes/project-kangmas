@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\Storage;
 
 class TukangController extends Controller
 {
-    /**
-     * Register a new Tukang (Multi-step).
-     */
     public function registerTukang(Request $request): JsonResponse
     {
         $request->validate([
@@ -32,7 +29,6 @@ class TukangController extends Controller
             'portofolio'     => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
-        // 1. Create User
         $user = User::create([
             'name'         => $request->name,
             'email'        => $request->email,
@@ -41,14 +37,12 @@ class TukangController extends Controller
             'phone_number' => $request->phone,
         ]);
 
-        // 2. Handle File Uploads
         $ktpPath = $request->file('ktp')->store('documents/ktp', 'public');
         $selfiePath = $request->file('selfie')->store('documents/selfie', 'public');
         $portfolioPath = $request->hasFile('portofolio') 
             ? $request->file('portofolio')->store('documents/portfolios', 'public') 
             : null;
 
-        // 3. Create Tukang Profile (with document paths saved to DB)
         $profile = TukangProfile::create([
             'user_id'         => $user->id,
             'category'        => $this->mapCategory($request->kategori),
@@ -77,9 +71,6 @@ class TukangController extends Controller
         ], 201);
     }
 
-    /**
-     * Get all pending tukangs for admin verification.
-     */
     public function getPendingTukangs(): JsonResponse
     {
         $pending = TukangProfile::with('user')
@@ -96,9 +87,9 @@ class TukangController extends Controller
                     'address'        => $p->address,
                     'lat'            => $p->lat,
                     'lng'            => $p->lng,
-                    'ktp_url'        => $p->ktp_path ? Storage::disk('public')->url($p->ktp_path) : null,
-                    'selfie_url'     => $p->selfie_path ? Storage::disk('public')->url($p->selfie_path) : null,
-                    'portofolio_url' => $p->portofolio_path ? Storage::disk('public')->url($p->portofolio_path) : null,
+                    'ktp_url'        => $p->ktp_path ? asset('storage/' . $p->ktp_path) : null,
+                    'selfie_url'     => $p->selfie_path ? asset('storage/' . $p->selfie_path) : null,
+                    'portofolio_url' => $p->portofolio_path ? asset('storage/' . $p->portofolio_path) : null,
                 ];
             });
 
@@ -108,9 +99,6 @@ class TukangController extends Controller
         ]);
     }
 
-    /**
-     * Approve a tukang registration.
-     */
     public function approveTukang(string $id): JsonResponse
     {
         $profile = TukangProfile::findOrFail($id);
@@ -123,9 +111,6 @@ class TukangController extends Controller
         ]);
     }
 
-    /**
-     * Reject a tukang registration.
-     */
     public function rejectTukang(string $id): JsonResponse
     {
         $profile = TukangProfile::findOrFail($id);
@@ -138,9 +123,6 @@ class TukangController extends Controller
         ]);
     }
 
-    /**
-     * Blacklist a tukang.
-     */
     public function blacklistTukang(string $id): JsonResponse
     {
         $profile = TukangProfile::findOrFail($id);
@@ -153,9 +135,6 @@ class TukangController extends Controller
         ]);
     }
 
-    /**
-     * Remove from blacklist.
-     */
     public function unblacklistTukang(string $id): JsonResponse
     {
         $profile = TukangProfile::findOrFail($id);
@@ -168,9 +147,6 @@ class TukangController extends Controller
         ]);
     }
 
-    /**
-     * Get all approved and non-blacklisted tukangs for the map.
-     */
     public function getApprovedTukangs(): JsonResponse
     {
         $tukangs = TukangProfile::with('user')
@@ -194,17 +170,14 @@ class TukangController extends Controller
         ]);
     }
 
-    /**
-     * Helper to map frontend category names to DB enum.
-     */
     private function mapCategory($category)
     {
         $map = [
             'Kelistrikan & Kabel'   => 'listrik',
             'Pembangunan Bangunan'  => 'bangunan',
             'Service AC'            => 'air',
-            'Sistem Keamanan'       => 'bangunan', // Fallback or add to enum
-            'Pengecatan & Dekorasi' => 'bangunan', // Fallback
+            'Sistem Keamanan'       => 'bangunan',
+            'Pengecatan & Dekorasi' => 'bangunan',
         ];
 
         return $map[$category] ?? 'bangunan';

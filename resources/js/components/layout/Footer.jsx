@@ -7,13 +7,11 @@ export default function Footer() {
       <div className="bg-[#6b7280] py-12">
         <div className="kangmas-container">
           <div className="flex flex-col md:flex-row justify-between pb-8 border-b border-gray-500 mb-8 border-dashed">
-            {/* Logo */}
             <div className="flex items-center gap-2 mb-6 md:mb-0">
               <WrenchScrewdriverIcon className="h-8 w-8 text-primary" />
               <span className="text-3xl font-bold tracking-tight text-white">KANGMAS</span>
             </div>
 
-            {/* Contact Grid */}
             <div className="flex flex-wrap gap-8">
               <div className="flex items-center gap-3">
                 <div className="bg-primary p-2 rounded-full">

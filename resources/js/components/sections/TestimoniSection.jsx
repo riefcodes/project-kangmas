@@ -37,7 +37,6 @@ export default function TestimoniSection() {
           </p>
         </div>
 
-        {/* 1 col on mobile, 2 on tablet, 3 on desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {testimonials.map((testi) => (
             <div key={testi.id} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
