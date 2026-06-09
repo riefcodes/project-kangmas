@@ -30,7 +30,7 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
     try {
       final res = await ApiService.get('/orders');
       if (res['success']) {
-        final List data = res['data']['data'];
+        final List data = res['data'];
         setState(() {
           orders = data.map((e) => OrderModel.fromJson(e)).toList();
         });
@@ -124,16 +124,18 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Dashboard Tukang'),
+        title: const Text('Dashboard Mitra', style: TextStyle(fontWeight: FontWeight.w700)),
         actions: [
           Row(
             children: [
-              const Text('Aktif'),
+              Text(isActive ? 'Online' : 'Offline', style: TextStyle(fontWeight: FontWeight.bold, color: isActive ? Colors.greenAccent : Colors.white70)),
               Switch(
                 value: isActive,
                 onChanged: (val) => _toggleActive(),
-                activeThumbColor: Colors.green,
+                activeColor: Colors.greenAccent,
+                inactiveThumbColor: Colors.grey.shade400,
               ),
             ],
           ),
@@ -149,34 +151,107 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.blue.shade50,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            color: Theme.of(context).colorScheme.primary,
             width: double.infinity,
-            child: Text(
-              'Profil: ⭐ ${auth.user?.tukangProfile?.avgRating ?? 0} | Kategori: ${auth.user?.tukangProfile?.category.toUpperCase()}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.white24,
+                  child: const Icon(Icons.engineering, color: Colors.white, size: 36),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(auth.user?.name ?? 'Mitra Tukang', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.blue.shade100, borderRadius: BorderRadius.circular(4)),
+                            child: Text(auth.user?.tukangProfile?.category.toUpperCase() ?? 'KATEGORI', style: TextStyle(color: Colors.blue.shade800, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.star, color: Colors.amber, size: 14),
+                          Text(' ${auth.user?.tukangProfile?.avgRating ?? 0}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 10),
-          const Text('Daftar Pekerjaan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                const Icon(Icons.work_history, color: Colors.blueGrey),
+                const SizedBox(width: 8),
+                Text('Daftar Pekerjaan Masuk', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.grey.shade800)),
+              ],
+            ),
+          ),
+
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : orders.isEmpty
-                    ? const Center(child: Text('Belum ada pesanan masuk.'))
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.inbox, size: 64, color: Colors.grey.shade300),
+                            const SizedBox(height: 16),
+                            const Text('Belum ada pesanan masuk hari ini.', style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      )
                     : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: orders.length,
                         itemBuilder: (context, index) {
                           final order = orders[index];
+                          
                           Color statusColor = Colors.grey;
-                          if (order.status == 'pending') statusColor = Colors.orange;
-                          if (order.status == 'accepted') statusColor = Colors.blue;
-                          if (order.status == 'completed') statusColor = Colors.green;
-                          if (order.status == 'cancelled') statusColor = Colors.red;
+                          Color statusBgColor = Colors.grey.shade100;
+                          String statusText = 'MENUNGGU';
 
-                          return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          if (order.status == 'pending') {
+                            statusColor = Colors.orange.shade700;
+                            statusBgColor = Colors.orange.shade50;
+                            statusText = 'ORDER BARU';
+                          }
+                          if (order.status == 'accepted') {
+                            statusColor = Colors.blue.shade700;
+                            statusBgColor = Colors.blue.shade50;
+                            statusText = 'DIPROSES';
+                          }
+                          if (order.status == 'completed') {
+                            statusColor = Colors.green.shade700;
+                            statusBgColor = Colors.green.shade50;
+                            statusText = 'SELESAI';
+                          }
+                          if (order.status == 'cancelled') {
+                            statusColor = Colors.red.shade700;
+                            statusBgColor = Colors.red.shade50;
+                            statusText = 'DIBATALKAN';
+                          }
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+                              ],
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Column(
@@ -185,40 +260,120 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text('Order #${order.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      Chip(
-                                        label: Text(order.status.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12)),
-                                        backgroundColor: statusColor,
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.receipt, size: 20, color: Colors.blueGrey),
+                                          const SizedBox(width: 8),
+                                          Text('Order #${order.id}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        ],
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: statusBgColor,
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(color: statusColor.withOpacity(0.3)),
+                                        ),
+                                        child: Text(
+                                          statusText, 
+                                          style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)
+                                        ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text('Pelanggan: ${order.user?.name ?? '-'}'),
-                                  Text('Kendala: ${order.description}'),
-                                  if (order.totalPrice != null)
-                                    Text('Total Harga: Rp ${order.totalPrice}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  const Divider(height: 24),
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 20,
+                                        backgroundColor: Colors.blue.shade50,
+                                        child: const Icon(Icons.person, color: Colors.blue),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text('Pelanggan:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                            Text(order.user?.name ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('Detail Pekerjaan:', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
+                                        const SizedBox(height: 4),
+                                        Text(order.description, style: const TextStyle(fontSize: 14, height: 1.4)),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  if (order.totalPrice != null) ...[
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('Total Pembayaran', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                                        Text('Rp ${order.totalPrice}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.green)),
+                                      ],
+                                    ),
+                                  ],
 
                                   const SizedBox(height: 16),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       if (order.status == 'pending' || order.status == 'accepted')
-                                        TextButton.icon(
-                                          icon: const Icon(Icons.chat, color: Colors.green),
-                                          label: const Text('Hubungi WA', style: TextStyle(color: Colors.green)),
-                                          onPressed: () => _openWhatsApp(order.user?.phoneNumber ?? ''),
+                                        Expanded(
+                                          flex: 1,
+                                          child: OutlinedButton.icon(
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: Colors.green.shade600,
+                                              side: BorderSide(color: Colors.green.shade600),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            icon: const Icon(Icons.chat, size: 18),
+                                            label: const Text('Chat', style: TextStyle(fontWeight: FontWeight.bold)),
+                                            onPressed: () => _openWhatsApp(order.user?.phoneNumber ?? ''),
+                                          ),
                                         ),
-                                      if (order.status == 'pending')
-                                        ElevatedButton(
-                                          onPressed: () => _updateOrderStatus(order.id, 'accepted'),
-                                          child: const Text('Terima Order'),
+                                      if (order.status == 'pending') ...[
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          flex: 2,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Theme.of(context).colorScheme.primary,
+                                              foregroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            onPressed: () => _updateOrderStatus(order.id, 'accepted'),
+                                            child: const Text('Terima Order', style: TextStyle(fontWeight: FontWeight.bold)),
+                                          ),
                                         ),
-                                      if (order.status == 'accepted')
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                                          onPressed: () => _showCompleteDialog(order.id),
-                                          child: const Text('Selesaikan', style: TextStyle(color: Colors.white)),
+                                      ],
+                                      if (order.status == 'accepted') ...[
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          flex: 2,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green,
+                                              foregroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            onPressed: () => _showCompleteDialog(order.id),
+                                            child: const Text('Selesaikan', style: TextStyle(fontWeight: FontWeight.bold)),
+                                          ),
                                         ),
+                                      ],
                                     ],
                                   )
                                 ],

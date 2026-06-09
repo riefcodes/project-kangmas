@@ -17,11 +17,11 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      role: json['role'],
-      phoneNumber: json['phone_number'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      name: json['name']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      role: json['role']?.toString() ?? '',
+      phoneNumber: json['phone_number']?.toString(),
       tukangProfile: json['tukang_profile'] != null
           ? TukangProfile.fromJson(json['tukang_profile'])
           : null,
@@ -54,15 +54,15 @@ class TukangProfile {
 
   factory TukangProfile.fromJson(Map<String, dynamic> json) {
     return TukangProfile(
-      id: json['id'],
-      category: json['category'],
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-      address: json['address'],
-      isActive: json['is_active'] == 1 || json['is_active'] == true,
-      avgRating: (json['avg_rating'] as num).toDouble(),
-      totalReviews: json['total_reviews'],
-      basePrice: json['base_price'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      category: json['category']?.toString() ?? '',
+      latitude: json['latitude'] != null ? (num.tryParse(json['latitude'].toString())?.toDouble() ?? 0.0) : 0.0,
+      longitude: json['longitude'] != null ? (num.tryParse(json['longitude'].toString())?.toDouble() ?? 0.0) : 0.0,
+      address: json['address']?.toString() ?? '',
+      isActive: json['is_active'] == 1 || json['is_active'] == true || json['is_active'] == '1',
+      avgRating: json['avg_rating'] != null ? (num.tryParse(json['avg_rating'].toString())?.toDouble() ?? 0.0) : 0.0,
+      totalReviews: json['total_reviews'] is int ? json['total_reviews'] : int.tryParse(json['total_reviews']?.toString() ?? '0') ?? 0,
+      basePrice: json['base_price'] is int ? json['base_price'] : int.tryParse(json['base_price']?.toString() ?? '0') ?? 0,
     );
   }
 }

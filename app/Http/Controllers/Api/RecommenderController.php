@@ -38,7 +38,9 @@ class RecommenderController extends Controller
                 return null;
             }
 
-            $normalizedRating   = $tukang->avg_rating / 5;
+            // Give new tukangs (0 reviews) a base rating of 3.5 so they aren't completely hidden
+            $effectiveRating = $tukang->total_reviews == 0 ? 3.5 : $tukang->avg_rating;
+            $normalizedRating   = $effectiveRating / 5;
             $normalizedDistance  = 1 - ($distance / self::MAX_RADIUS_KM);
 
             $finalScore = ($normalizedRating * self::WEIGHT_RATING)
@@ -62,7 +64,7 @@ class RecommenderController extends Controller
         })
         ->filter()
         ->sortByDesc('final_score')
-        ->take(3)
+        ->take(20)
         ->values();
 
         return response()->json([

@@ -11,6 +11,7 @@ class OrderModel {
   final String createdAt;
   final UserModel? user;
   final UserModel? tukang;
+  final dynamic review;
 
   OrderModel({
     required this.id,
@@ -23,20 +24,22 @@ class OrderModel {
     required this.createdAt,
     this.user,
     this.tukang,
+    this.review,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
-      id: json['id'],
-      userId: json['user_id'],
-      tukangId: json['tukang_id'],
-      description: json['description'],
-      imagePath: json['image_path'],
-      status: json['status'],
-      totalPrice: json['total_price'],
-      createdAt: json['created_at'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      userId: json['user_id'] is int ? json['user_id'] : int.tryParse(json['user_id']?.toString() ?? '0') ?? 0,
+      tukangId: json['tukang_id'] is int ? json['tukang_id'] : int.tryParse(json['tukang_id']?.toString() ?? '0') ?? 0,
+      description: json['description']?.toString() ?? '',
+      imagePath: json['image_path']?.toString(),
+      status: json['status']?.toString() ?? 'pending',
+      totalPrice: json['total_price'] != null ? int.tryParse(json['total_price'].toString()) : null,
+      createdAt: json['created_at']?.toString() ?? '',
       user: json['user'] != null ? UserModel.fromJson(json['user']) : null,
       tukang: json['tukang'] != null ? UserModel.fromJson(json['tukang']) : null,
+      review: json['review'],
     );
   }
 }
