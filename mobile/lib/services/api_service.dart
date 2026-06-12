@@ -3,14 +3,14 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Use 10.0.2.2 for Android Emulator, or localhost for Windows/Web
-  // Or hardcode to your PC's local IP if testing on a real device.
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // GANTI IP ini sesuai dengan IPv4 laptop Anda (hasil ipconfig)
+  // Pastikan port :8000 disertakan jika menggunakan php artisan serve
+  static const String baseUrl = 'http://192.168.101.23:8000/api';
 
   static Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
-    
+
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -61,16 +61,17 @@ class ApiService {
   }
 
   static dynamic _processResponse(http.Response response) {
+    final body = response.body;
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      // Decode successful JSON response
-      return jsonDecode(response.body);
+      return jsonDecode(body);
     } else {
-      // Decode error response
       try {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Unknown error occurred');
+        final errorData = jsonDecode(body);
+        // Jika ada pesan dari server, pakai itu. Jika tidak, pakai status code.
+        throw Exception(errorData['message'] ?? 'Error ${response.statusCode}');
       } catch (e) {
-        throw Exception('Server error: ${response.statusCode}');
+        // Jika body bukan JSON (misal HTML error page), tampilkan potongan body-nya untuk debug
+        throw Exception('Server error (${response.statusCode}): ${body.length > 100 ? body.substring(0, 100) : body}');
       }
     }
   }

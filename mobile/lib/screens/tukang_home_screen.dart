@@ -1,389 +1,259 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
-import '../models/order_model.dart';
 
 class TukangHomeScreen extends StatefulWidget {
   const TukangHomeScreen({super.key});
 
   @override
-  _TukangHomeScreenState createState() => _TukangHomeScreenState();
+  State<TukangHomeScreen> createState() => _TukangHomeScreenState();
 }
 
 class _TukangHomeScreenState extends State<TukangHomeScreen> {
-  bool isActive = false;
-  List<OrderModel> orders = [];
-  bool isLoading = true;
+  List<dynamic> _availableJobs = [];
+  bool _isLoading = true;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    isActive = auth.user?.tukangProfile?.isActive ?? false;
-    _fetchOrders();
+    _fetchJobs();
+    // Refresh otomatis setiap 2 menit
+    _refreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
+      _fetchJobs();
+    });
   }
 
-  Future<void> _fetchOrders() async {
-    setState(() => isLoading = true);
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchJobs() async {
     try {
-      final res = await ApiService.get('/orders');
-      if (res['success']) {
-        final List data = res['data'];
-        setState(() {
-          orders = data.map((e) => OrderModel.fromJson(e)).toList();
-        });
+      final response = await ApiService.get('/orders');
+      if (response['success']) {
+        if (mounted) {
+          setState(() {
+            // Tampilkan pesanan yang masih 'pending' dan belum ada tukangnya
+            _availableJobs = (response['data'] as List)
+                .where((o) => o['status'] == 'pending' && o['tukang_id'] == null)
+                .toList();
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
-  }
-
-  Future<void> _toggleActive() async {
-    try {
-      final res = await ApiService.patch('/tukang/toggle-active');
-      if (res['success']) {
-        setState(() {
-          isActive = res['data']['is_active'];
-        });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-  }
-
-  Future<void> _updateOrderStatus(int id, String status, {int? price}) async {
-    try {
-      final Map<String, dynamic> body = {'status': status};
-      if (price != null) body['total_price'] = price;
-
-      final res = await ApiService.put('/orders/$id', body);
-      if (res['success']) {
-        _fetchOrders();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Status pesanan diperbarui')));
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-  }
-
-  Future<void> _showCompleteDialog(int orderId) async {
-    final priceCtl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Selesaikan Pesanan'),
-          content: TextField(
-            controller: priceCtl,
-            decoration: const InputDecoration(labelText: 'Total Biaya (Rp)'),
-            keyboardType: TextInputType.number,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final price = int.tryParse(priceCtl.text);
-                if (price != null && price > 0) {
-                  Navigator.pop(context);
-                  _updateOrderStatus(orderId, 'completed', price: price);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap masukkan harga yang valid')));
-                }
-              },
-              child: const Text('Selesai'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _openWhatsApp(String phone) async {
-    String formattedPhone = phone;
-    if (phone.startsWith('0')) {
-      formattedPhone = '62${phone.substring(1)}';
-    }
-    final url = Uri.parse('https://wa.me/$formattedPhone');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tidak dapat membuka WhatsApp')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text('Dashboard Mitra', style: TextStyle(fontWeight: FontWeight.w700)),
-        actions: [
-          Row(
-            children: [
-              Text(isActive ? 'Online' : 'Offline', style: TextStyle(fontWeight: FontWeight.bold, color: isActive ? Colors.greenAccent : Colors.white70)),
-              Switch(
-                value: isActive,
-                onChanged: (val) => _toggleActive(),
-                activeColor: Colors.greenAccent,
-                inactiveThumbColor: Colors.grey.shade400,
-              ),
-            ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              auth.logout();
-              Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-            },
-          )
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            color: Theme.of(context).colorScheme.primary,
-            width: double.infinity,
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white24,
-                  child: const Icon(Icons.engineering, color: Colors.white, size: 36),
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: RefreshIndicator(
+        onRefresh: _fetchJobs,
+        color: Colors.amber,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(top: 60, left: 25, right: 25, bottom: 40),
+                decoration: const BoxDecoration(
+                  color: Colors.amber,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(35),
+                    bottomRight: Radius.circular(35),
+                  ),
                 ),
-                const SizedBox(width: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Icon(Icons.notes_rounded, color: Colors.white, size: 30),
+                        const CircleAvatar(
+                          backgroundColor: Colors.white,
+                          radius: 20,
+                          child: Icon(Icons.person, color: Colors.amber),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 35),
+                    Text(
+                      'Selamat Datang,\n${auth.user?.name ?? 'Tukang'}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text('Cari pekerjaan yang cocok untukmu hari ini',
+                        style: TextStyle(color: Colors.white, fontSize: 14)),
+                  ],
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(25, 25, 25, 10),
+              sliver: SliverToBoxAdapter(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Pekerjaan Terbaru (${_availableJobs.length})",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
+                    const Icon(Icons.sync, size: 16, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
+            if (_isLoading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator(color: Colors.amber)),
+              )
+            else if (_availableJobs.isEmpty)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off_rounded, size: 60, color: Colors.grey[400]),
+                      const SizedBox(height: 10),
+                      const Text("Belum ada pekerjaan tersedia", style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final job = _availableJobs[index];
+                      return _buildJobCard(context, job);
+                    },
+                    childCount: _availableJobs.length,
+                  ),
+                ),
+              ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNav(context, auth),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _fetchJobs,
+        backgroundColor: const Color(0xFF0F172A),
+        child: const Icon(Icons.refresh_rounded, color: Colors.white),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  Widget _buildJobCard(BuildContext context, dynamic job) {
+    IconData iconData;
+    switch (job['category']?.toString().toLowerCase()) {
+      case 'listrik': iconData = Icons.electric_bolt_rounded; break;
+      case 'pipa': iconData = Icons.plumbing_rounded; break;
+      case 'bangunan': iconData = Icons.home_repair_service_rounded; break;
+      case 'ac': iconData = Icons.ac_unit_rounded; break;
+      default: iconData = Icons.handyman_rounded;
+    }
+
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/job_detail', arguments: job),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(iconData, color: Colors.amber[800], size: 24),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(auth.user?.name ?? 'Mitra Tukang', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.blue.shade100, borderRadius: BorderRadius.circular(4)),
-                            child: Text(auth.user?.tukangProfile?.category.toUpperCase() ?? 'KATEGORI', style: TextStyle(color: Colors.blue.shade800, fontSize: 10, fontWeight: FontWeight.bold)),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.star, color: Colors.amber, size: 14),
-                          Text(' ${auth.user?.tukangProfile?.avgRating ?? 0}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                        ],
-                      ),
+                      Text(job['category'] ?? 'Lainnya',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF0F172A))),
+                      Text(job['address'] ?? 'Lokasi tidak spesifik',
+                        style: const TextStyle(color: Colors.grey, fontSize: 11),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
+                const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
               ],
             ),
-          ),
-          
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 15),
+              child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+            ),
+            Text(job['description'] ?? '-',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Color(0xFF475569), fontSize: 13, height: 1.4)),
+            const SizedBox(height: 15),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(Icons.work_history, color: Colors.blueGrey),
-                const SizedBox(width: 8),
-                Text('Daftar Pekerjaan Masuk', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.grey.shade800)),
+                const Text("Tawaran Biaya:", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                Text("Rp ${job['total_price'] ?? 0}",
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.green)),
               ],
             ),
-          ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : orders.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.inbox, size: 64, color: Colors.grey.shade300),
-                            const SizedBox(height: 16),
-                            const Text('Belum ada pesanan masuk hari ini.', style: TextStyle(color: Colors.grey)),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: orders.length,
-                        itemBuilder: (context, index) {
-                          final order = orders[index];
-                          
-                          Color statusColor = Colors.grey;
-                          Color statusBgColor = Colors.grey.shade100;
-                          String statusText = 'MENUNGGU';
-
-                          if (order.status == 'pending') {
-                            statusColor = Colors.orange.shade700;
-                            statusBgColor = Colors.orange.shade50;
-                            statusText = 'ORDER BARU';
-                          }
-                          if (order.status == 'accepted') {
-                            statusColor = Colors.blue.shade700;
-                            statusBgColor = Colors.blue.shade50;
-                            statusText = 'DIPROSES';
-                          }
-                          if (order.status == 'completed') {
-                            statusColor = Colors.green.shade700;
-                            statusBgColor = Colors.green.shade50;
-                            statusText = 'SELESAI';
-                          }
-                          if (order.status == 'cancelled') {
-                            statusColor = Colors.red.shade700;
-                            statusBgColor = Colors.red.shade50;
-                            statusText = 'DIBATALKAN';
-                          }
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.receipt, size: 20, color: Colors.blueGrey),
-                                          const SizedBox(width: 8),
-                                          Text('Order #${order.id}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                        ],
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: statusBgColor,
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(color: statusColor.withOpacity(0.3)),
-                                        ),
-                                        child: Text(
-                                          statusText, 
-                                          style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(height: 24),
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 20,
-                                        backgroundColor: Colors.blue.shade50,
-                                        child: const Icon(Icons.person, color: Colors.blue),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text('Pelanggan:', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                            Text(order.user?.name ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text('Detail Pekerjaan:', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
-                                        const SizedBox(height: 4),
-                                        Text(order.description, style: const TextStyle(fontSize: 14, height: 1.4)),
-                                      ],
-                                    ),
-                                  ),
-                                  
-                                  if (order.totalPrice != null) ...[
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text('Total Pembayaran', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
-                                        Text('Rp ${order.totalPrice}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.green)),
-                                      ],
-                                    ),
-                                  ],
-
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      if (order.status == 'pending' || order.status == 'accepted')
-                                        Expanded(
-                                          flex: 1,
-                                          child: OutlinedButton.icon(
-                                            style: OutlinedButton.styleFrom(
-                                              foregroundColor: Colors.green.shade600,
-                                              side: BorderSide(color: Colors.green.shade600),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            ),
-                                            icon: const Icon(Icons.chat, size: 18),
-                                            label: const Text('Chat', style: TextStyle(fontWeight: FontWeight.bold)),
-                                            onPressed: () => _openWhatsApp(order.user?.phoneNumber ?? ''),
-                                          ),
-                                        ),
-                                      if (order.status == 'pending') ...[
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          flex: 2,
-                                          child: ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Theme.of(context).colorScheme.primary,
-                                              foregroundColor: Colors.white,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            ),
-                                            onPressed: () => _updateOrderStatus(order.id, 'accepted'),
-                                            child: const Text('Terima Order', style: TextStyle(fontWeight: FontWeight.bold)),
-                                          ),
-                                        ),
-                                      ],
-                                      if (order.status == 'accepted') ...[
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          flex: 2,
-                                          child: ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green,
-                                              foregroundColor: Colors.white,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            ),
-                                            onPressed: () => _showCompleteDialog(order.id),
-                                            child: const Text('Selesaikan', style: TextStyle(fontWeight: FontWeight.bold)),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  )
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-          ),
-        ],
+  Widget _buildBottomNav(BuildContext context, AuthProvider auth) {
+    return BottomAppBar(
+      notchMargin: 10,
+      shape: const CircularNotchedRectangle(),
+      child: SizedBox(
+        height: 65,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(icon: const Icon(Icons.home_rounded, color: Colors.amber, size: 28), onPressed: () {}),
+            IconButton(icon: const Icon(Icons.receipt_long_rounded, color: Colors.grey), onPressed: () => Navigator.pushNamed(context, '/history')),
+            const SizedBox(width: 40),
+            IconButton(icon: const Icon(Icons.chat_rounded, color: Colors.grey), onPressed: () => Navigator.pushNamed(context, '/chat_list')),
+            IconButton(icon: const Icon(Icons.person_rounded, color: Colors.grey), onPressed: () => Navigator.pushNamed(context, '/profile')),
+          ],
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { FileText, FolderOpen, IdCard, MapPin, Star, ClipboardList, ShoppingBag, Calendar, DollarSign, User as UserIcon } from 'lucide-react';
+import { FileText, FolderOpen, IdCard, MapPin, Star, ClipboardList, ShoppingBag, Calendar, DollarSign, User as UserIcon, Home as HomeIcon } from 'lucide-react';
+import DashboardHome from './DashboardHome';
 
 function DocumentModal({ tukang, onClose }) {
   if (!tukang) return null;
@@ -128,7 +129,7 @@ function DocumentModal({ tukang, onClose }) {
 }
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('verification');
+  const [activeTab, setActiveTab] = useState('home');
   const [pendingTukangs, setPendingTukangs] = useState([]);
   const [allTukangs, setAllTukangs] = useState([]);
   const [analyticsData, setAnalyticsData] = useState([]);
@@ -143,6 +144,10 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      if (activeTab === 'home') {
+        setLoading(false);
+        return;
+      }
       if (activeTab === 'verification') {
         const res = await api.get('/admin/tukang/pending');
         setPendingTukangs(res.data.data);
@@ -241,6 +246,12 @@ export default function AdminDashboard() {
         <h2 className="text-2xl font-bold mb-8 text-primary">Admin Panel</h2>
         <nav className="space-y-4">
           <button
+            onClick={() => setActiveTab('home')}
+            className={`w-full text-left px-4 py-2 rounded transition ${activeTab === 'home' ? 'bg-primary text-gray-900 font-bold' : 'hover:bg-slate-800'}`}
+          >
+            Dashboard Utama
+          </button>
+          <button
             onClick={() => setActiveTab('verification')}
             className={`w-full text-left px-4 py-2 rounded transition ${activeTab === 'verification' ? 'bg-primary text-gray-900 font-bold' : 'hover:bg-slate-800'}`}
           >
@@ -270,13 +281,15 @@ export default function AdminDashboard() {
       <div className="flex-1 p-10">
         <div className="flex justify-between items-center mb-10">
           <h1 className="text-3xl font-bold text-gray-800">
-            {activeTab === 'verification' 
-              ? 'Verifikasi Pendaftaran Tukang WEB' 
-              : activeTab === 'manage' 
-                ? 'Manajemen & Blacklist Tukang' 
-                : activeTab === 'orders'
-                  ? 'Aktivitas & Monitoring Pesanan'
-                  : 'Analitik & Performa Tukang'}
+            {activeTab === 'home'
+              ? 'Dashboard Utama'
+              : activeTab === 'verification'
+                ? 'Verifikasi Pendaftaran Tukang WEB'
+                : activeTab === 'manage'
+                  ? 'Manajemen & Blacklist Tukang'
+                  : activeTab === 'orders'
+                    ? 'Aktivitas & Monitoring Pesanan'
+                    : 'Analitik & Performa Tukang'}
           </h1>
           <a href="/" className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded font-semibold hover:bg-gray-300 transition">
             &larr; Kembali ke Beranda
@@ -289,6 +302,9 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <>
+            {activeTab === 'home' && (
+              <DashboardHome onNavigateTo={setActiveTab} />
+            )}
             {activeTab === 'verification' && (
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 className="text-xl font-semibold mb-4">Menunggu Verifikasi</h3>

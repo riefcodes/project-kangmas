@@ -19,7 +19,11 @@ class OrderController extends Controller
         if ($user->role === 'user') {
             $query->where('user_id', $user->id);
         } elseif ($user->role === 'tukang') {
-            $query->where('tukang_id', $user->id);
+            // Tukang melihat pesanan miliknya ATAU pesanan yang belum ada tukangnya (tersedia)
+            $query->where(function($q) use ($user) {
+                $q->where('tukang_id', $user->id)
+                  ->orWhereNull('tukang_id');
+            });
         }
 
         $orders = $query->get();
@@ -33,37 +37,44 @@ class OrderController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        if ($user->role !== 'user') {
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Silakan login kembali'], 401);
+            }
+
+            // Ambil harga dan pastikan menjadi angka
+            $rawPrice = $request->price ?? '0';
+            $cleanPrice = (int) preg_replace('/[^0-9]/', '', (string)$rawPrice);
+
+            // Simpan menggunakan query builder agar lebih aman dan cepat
+            $order = new Order();
+            $order->user_id = $user->id;
+            $order->tukang_id = $request->tukang_id ?? null;
+            // Pastikan category tidak null sebelum simpan
+            $order->category = $request->category ?: 'Lainnya';
+            $order->description = $request->description ?: '-';
+            $order->address = $request->address ?: '-';
+            $order->job_date = $request->job_date;
+            $order->job_time = $request->job_time;
+            $order->total_price = $cleanPrice > 0 ? $cleanPrice : 0;
+            $order->status = 'pending';
+
+            $order->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pesanan berhasil dibuat',
+                'data'    => $order
+            ], 201);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only users can create orders',
-                'data'    => null,
-            ], 403);
+                'message' => 'Gagal Simpan Database: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $validated = $request->validate([
-            'tukang_id'   => 'required|exists:users,id',
-            'description' => 'required|string|max:1000',
-            'image_path'  => 'nullable|string|max:255',
-        ]);
-
-        $order = Order::create([
-            'user_id'     => $user->id,
-            'tukang_id'   => $validated['tukang_id'],
-            'description' => $validated['description'],
-            'image_path'  => $validated['image_path'] ?? null,
-            'status'      => 'pending',
-        ]);
-
-        $order->load(['user:id,name,phone_number', 'tukang:id,name,phone_number']);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Order created successfully',
-            'data'    => $order,
-        ], 201);
     }
 
     public function show(Request $request, string $id): JsonResponse

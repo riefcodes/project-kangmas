@@ -11,7 +11,11 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'tukang_id',
+        'category',
         'description',
+        'address',
+        'job_date',
+        'job_time',
         'image_path',
         'status',
         'total_price',

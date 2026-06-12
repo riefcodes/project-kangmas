@@ -1,252 +1,290 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
-import '../models/user_model.dart';
-import 'tukang_detail_screen.dart';
-import 'user_orders_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
 
   @override
-  _UserHomeScreenState createState() => _UserHomeScreenState();
+  State<UserHomeScreen> createState() => _UserHomeScreenState();
 }
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
-  final List<Map<String, String>> categories = [
-    {'value': 'listrik', 'label': 'Listrik & Kabel'},
-    {'value': 'air', 'label': 'Service AC & Air'},
-    {'value': 'bangunan', 'label': 'Pembangunan'},
-  ];
-  String selectedCategory = 'listrik';
-  List<dynamic> recommendations = [];
-  bool isLoading = false;
+  List<dynamic> _activeOrders = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchRecommendations();
+    _fetchActiveOrders();
   }
 
-  Future<void> _fetchRecommendations() async {
-    setState(() => isLoading = true);
+  Future<void> _fetchActiveOrders() async {
     try {
-      // Fallback: Telkom University
-      double lat = -6.9730;
-      double lng = 107.6307;
-
-      try {
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
+      final response = await ApiService.get('/orders');
+      if (response['success']) {
+        if (mounted) {
+          setState(() {
+            _activeOrders = (response['data'] as List)
+                .where((o) => o['status'] == 'pending' || o['status'] == 'accepted')
+                .toList();
+            _isLoading = false;
+          });
         }
-        if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
-          Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-          lat = position.latitude;
-          lng = position.longitude;
-        }
-      } catch (_) {
-
-      }
-
-      final res = await ApiService.get(
-          '/recommend?latitude=$lat&longitude=$lng&category=$selectedCategory');
-
-      if (res['success']) {
-        setState(() {
-          recommendations = res['data'];
-        });
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    } finally {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('KANGMAS', style: TextStyle(fontWeight: FontWeight.w800)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => UserOrdersScreen()));
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              auth.logout();
-              Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-            },
-          )
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            color: Theme.of(context).colorScheme.primary,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Halo, ${auth.user?.name ?? 'Pengguna'} 👋',
-                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: RefreshIndicator(
+        onRefresh: _fetchActiveOrders,
+        color: Colors.amber,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.only(top: 60, left: 25, right: 25, bottom: 40),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFC107),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(35),
+                    bottomRight: Radius.circular(35),
+                  ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Pilih spesialisasi tukang yang Anda butuhkan.',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-          // Category Selector
-          Container(
-            height: 70,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 4)),
-              ],
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                children: categories.map((cat) {
-                  final isSelected = cat['value'] == selectedCategory;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ChoiceChip(
-                      label: Text(
-                        cat['label']!.toUpperCase(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : Colors.black87,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Icon(Icons.notes_rounded, color: Colors.white, size: 30),
+                        const CircleAvatar(
+                          backgroundColor: Colors.white,
+                          radius: 20,
+                          child: Icon(Icons.person, color: Colors.amber),
                         ),
-                      ),
-                      selected: isSelected,
-                      selectedColor: Theme.of(context).colorScheme.secondary,
-                      backgroundColor: Colors.grey.shade100,
-                      onSelected: (selected) {
-                        if (selected) {
-                          setState(() => selectedCategory = cat['value']!);
-                          _fetchRecommendations();
-                        }
-                      },
+                      ],
                     ),
-                  );
-                }).toList(),
+                    const SizedBox(height: 35),
+                    Text(
+                      'Halo,\n${auth.user?.name ?? 'User'}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text('Butuh bantuan apa hari ini?',
+                        style: TextStyle(color: Colors.white70, fontSize: 16)),
+                  ],
+                ),
               ),
-            ),
-          ),
-          
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                const Icon(Icons.recommend, color: Colors.amber),
-                const SizedBox(width: 8),
-                Text('Rekomendasi Terbaik', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.grey.shade800)),
-              ],
-            ),
-          ),
 
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : recommendations.isEmpty
-                    ? Center(
+              // SEKSI PESANAN AKTIF (Notifikasi)
+              if (_activeOrders.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Pesanan Aktif",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
+                      const SizedBox(height: 15),
+                      ..._activeOrders.map((order) => _buildActiveOrderCard(order)).toList(),
+                    ],
+                  ),
+                ),
+
+              // Bagian Kategori
+              Padding(
+                padding: const EdgeInsets.all(25),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Layanan Kami",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
+                    const SizedBox(height: 20),
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 4,
+                      mainAxisSpacing: 20,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 0.7,
+                      children: [
+                        _buildCategory('Bangunan', Icons.home_repair_service_rounded),
+                        _buildCategory('Listrik', Icons.electric_bolt_rounded),
+                        _buildCategory('Pipa', Icons.plumbing_rounded),
+                        _buildCategory('Cat', Icons.format_paint_rounded),
+                        _buildCategory('AC', Icons.ac_unit_rounded),
+                        _buildCategory('Kebun', Icons.local_florist_rounded),
+                        _buildCategory('Bersih', Icons.cleaning_services_rounded),
+                        _buildCategory('Lainnya', Icons.grid_view_rounded),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Info Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15)],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 40),
+                      const SizedBox(width: 15),
+                      Expanded(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.search_off, size: 64, color: Colors.grey.shade300),
-                            const SizedBox(height: 16),
-                            const Text('Tidak ada tukang ditemukan di sekitar Anda.', style: TextStyle(color: Colors.grey)),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text("Tukang Terverifikasi", style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text("Semua tukang kami telah melewati seleksi ketat.",
+                              style: TextStyle(fontSize: 12, color: Colors.grey)),
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: recommendations.length,
-                        itemBuilder: (context, index) {
-                          final tukang = recommendations[index];
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
-                              ],
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.all(12),
-                              leading: CircleAvatar(
-                                radius: 28,
-                                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                child: Text(tukang['name'][0], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
-                              ),
-                              title: Text(tukang['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.star, color: Colors.amber, size: 16),
-                                        Text(' ${tukang['avg_rating']} (${tukang['total_reviews']} ulasan)', style: const TextStyle(fontWeight: FontWeight.w600)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.location_on, color: Colors.redAccent, size: 16),
-                                        Text(' ${tukang['distance_km']} km dari lokasi Anda', style: const TextStyle(color: Colors.grey)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.monetization_on, color: Colors.green, size: 16),
-                                        Text(' Rp ${tukang['base_price']} (Tarif Dasar)', style: const TextStyle(color: Colors.grey)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              trailing: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => TukangDetailScreen(tukangId: tukang['user_id'])),
-                                  );
-                                },
-                                child: const Text('Detail', style: TextStyle(fontWeight: FontWeight.bold)),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 100),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNav(auth),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: const Color(0xFF0F172A),
+        child: const Icon(Icons.add, color: Colors.white, size: 30),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  Widget _buildActiveOrderCard(dynamic order) {
+    bool isAccepted = order['status'] == 'accepted';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isAccepted ? const Color(0xFFE3F2FD) : const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isAccepted ? Colors.blue.shade100 : Colors.amber.shade100),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isAccepted ? Colors.blue : Colors.amber,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(isAccepted ? Icons.engineering : Icons.hourglass_empty,
+                     color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isAccepted ? "Tukang Menuju Lokasi!" : "Menunggu Verifikasi...",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                    Text("Kategori: ${order['category']}", style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (isAccepted) ...[
+            const Divider(height: 25),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/live_tracking', arguments: order),
+                icon: const Icon(Icons.map_outlined),
+                label: const Text("Lacak Lokasi Tukang"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            )
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategory(String title, IconData icon) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/create_job', arguments: {'category': title}),
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))],
+            ),
+            child: Icon(icon, color: const Color(0xFFFFC107), size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF555555)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNav(AuthProvider auth) {
+    return BottomAppBar(
+      notchMargin: 10,
+      shape: const CircularNotchedRectangle(),
+      child: SizedBox(
+        height: 65,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(icon: const Icon(Icons.home_rounded, color: Colors.amber, size: 28), onPressed: () {}),
+            IconButton(icon: const Icon(Icons.receipt_long_rounded, color: Colors.grey), onPressed: () => Navigator.pushNamed(context, '/history')),
+            const SizedBox(width: 40),
+            IconButton(icon: const Icon(Icons.chat_rounded, color: Colors.grey), onPressed: () => Navigator.pushNamed(context, '/chat_list')),
+            IconButton(icon: const Icon(Icons.person_rounded, color: Colors.grey), onPressed: () => Navigator.pushNamed(context, '/profile')),
+          ],
+        ),
       ),
     );
   }
