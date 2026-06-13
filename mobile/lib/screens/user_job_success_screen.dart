@@ -13,7 +13,7 @@ class UserJobSuccessScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(),
-            // Success Icon with wavy background (simplified with Icon for now)
+            // Success Icon with wavy background (place holder)
             Stack(
               alignment: Alignment.center,
               children: [

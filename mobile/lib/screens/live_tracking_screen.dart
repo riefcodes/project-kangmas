@@ -12,10 +12,10 @@ class LiveTrackingScreen extends StatelessWidget {
       return;
     }
 
-    // Bersihkan nomor dari karakter non-digit
+    // bersihin no dri karakter yg bkan angka
     String cleanNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
 
-    // Ubah awalan 0 menjadi 62 (Kode Negara Indonesia) jika perlu
+    // rubah awalan 0 ke 62 (kode indo) klo perlu
     if (cleanNumber.startsWith('0')) {
       cleanNumber = '62${cleanNumber.substring(1)}';
     }
@@ -37,14 +37,14 @@ class LiveTrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mengambil data order yang dikirim dari UserHomeScreen
+    // ambil data order yg dikirim dri UserHomeScreen
     final order = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     final tukang = order['tukang'] ?? {};
 
     return Scaffold(
       body: Stack(
         children: [
-          // Mock Map Background
+          // Background Map boongan
           Container(
             color: const Color(0xFFFFF9E7),
             width: double.infinity,
@@ -54,7 +54,7 @@ class LiveTrackingScreen extends StatelessWidget {
             ),
           ),
 
-          // Back Button
+          // tombol buat balik
           Positioned(
             top: 50,
             left: 20,
@@ -67,7 +67,7 @@ class LiveTrackingScreen extends StatelessWidget {
             ),
           ),
 
-          // Bottom Info Card
+          // kartu info yg dibawah
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -83,7 +83,7 @@ class LiveTrackingScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Worker Profile
+                  // profil si tukang nya
                   Row(
                     children: [
                       CircleAvatar(
@@ -111,7 +111,7 @@ class LiveTrackingScreen extends StatelessWidget {
                   ),
                   const Divider(height: 30),
 
-                  // Estimation
+                  // estimasi nyampe
                   Row(
                     children: [
                       const Icon(Icons.access_time, color: Colors.amber),
@@ -137,7 +137,7 @@ class LiveTrackingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 15),
 
-                  // Location
+                  // bagian lokasi
                   Row(
                     children: [
                       const Icon(Icons.location_on, color: Colors.amber),
@@ -164,7 +164,7 @@ class LiveTrackingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Complete Button
+                  // tombol selesein pesanan
                   SizedBox(
                     width: double.infinity,
                     height: 50,
