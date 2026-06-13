@@ -11,7 +11,8 @@ return new class extends Migration {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('tukang_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('tukang_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->string('category')->nullable();
             $table->text('description');
             $table->string('image_path')->nullable();
             $table->enum('status', ['pending', 'accepted', 'completed', 'cancelled'])->default('pending');

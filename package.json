@@ -3,7 +3,7 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite --host"
     },
     "devDependencies": {
         "@vitejs/plugin-react": "^4.7.0",
@@ -21,6 +21,7 @@
         "lucide-react": "^1.17.0",
         "react": "^19.2.5",
         "react-dom": "^19.2.5",
-        "react-router-dom": "^7.14.0"
+        "react-router-dom": "^7.14.0",
+        "recharts": "^3.8.1"
     }
 }
