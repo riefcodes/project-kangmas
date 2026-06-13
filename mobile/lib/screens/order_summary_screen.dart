@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 
 class OrderSummaryScreen extends StatefulWidget {
@@ -26,17 +28,35 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
       return;
     }
 
+    // Konversi tanggal dari dd/MM/yy ke yyyy-MM-dd agar diterima database
+    String formattedDate = '';
+    try {
+      if (args['job_date'] != null && args['job_date'].toString().isNotEmpty) {
+        DateTime parsedDate = DateFormat('dd/MM/yy').parse(args['job_date']);
+        formattedDate = DateFormat('yyyy-MM-dd').format(parsedDate);
+      }
+    } catch (e) {
+      formattedDate = args['job_date'] ?? '';
+    }
+
     setState(() => _isSubmitting = true);
     try {
-      final response = await ApiService.post('/orders', {
-        'category': args['category'],
-        'description': args['description'],
-        'price': args['price'],
-        'job_date': args['job_date'],
-        'job_time': args['job_time'],
-        'address': _addressController.text.trim(),
-        'status': 'pending',
-      });
+      final response = await ApiService.multipartPost(
+        endpoint: '/orders',
+        fields: {
+          'category': args['category'] ?? '',
+          'description': args['description'] ?? '',
+          'price': args['price'] ?? '0',
+          'job_date': formattedDate, // Gunakan tanggal yang sudah diformat
+          'job_time': args['job_time'] ?? '',
+          'address': _addressController.text.trim(),
+          'status': 'pending',
+        },
+        singleFile: args['problem_image'] as File?,
+        singleFileKey: 'image',
+        multiFiles: args['location_images'] as List<File>?,
+        multiFilesKey: 'location_images[]',
+      );
 
       if (response['success']) {
         if (mounted) {
@@ -59,6 +79,8 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
   @override
   Widget build(BuildContext context) {
     final Map<String, dynamic> args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final File? problemImage = args['problem_image'] as File?;
+    final List<File>? locationImages = args['location_images'] as List<File>?;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -115,6 +137,21 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
                   ),
                   const SizedBox(height: 15),
 
+                  // Problem Image Preview
+                  if (problemImage != null) ...[
+                    const Text('Foto Masalah:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 180,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        image: DecorationImage(image: FileImage(problemImage), fit: BoxFit.cover),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
                   // Jadwal Section
                   Row(
                     children: [
@@ -153,6 +190,31 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
                     child: Text(args['description'] ?? '-', style: const TextStyle(fontSize: 15)),
                   ),
                   const SizedBox(height: 20),
+
+                  // Location Images Preview
+                  if (locationImages != null && locationImages.isNotEmpty) ...[
+                    const Text('Foto Lokasi Sekitar:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: locationImages.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            margin: const EdgeInsets.only(right: 10),
+                            width: 100,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              image: DecorationImage(image: FileImage(locationImages[index]), fit: BoxFit.cover),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

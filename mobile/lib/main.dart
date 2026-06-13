@@ -21,6 +21,8 @@ import 'screens/create_job_screen.dart';
 import 'screens/order_summary_screen.dart';
 import 'screens/user_job_success_screen.dart';
 import 'screens/live_tracking_screen.dart';
+import 'screens/proof_approval_screen.dart';
+import 'screens/proof_view_screen.dart';
 
 void main() {
   runApp(
@@ -58,7 +60,8 @@ class KangmasApp extends StatelessWidget {
       initialRoute: '/',
       onGenerateRoute: (settings) {
         if (settings.name == '/auth_choice') {
-          final role = settings.arguments as String;
+          final args = settings.arguments;
+          final role = (args is String) ? args : 'user';
           return MaterialPageRoute(
             builder: (context) => AuthChoiceScreen(role: role),
           );
@@ -91,6 +94,8 @@ class KangmasApp extends StatelessWidget {
         '/order_summary': (context) => const OrderSummaryScreen(),
         '/user_job_success': (context) => const UserJobSuccessScreen(),
         '/live_tracking': (context) => const LiveTrackingScreen(),
+        '/proof_approval': (context) => const ProofApprovalScreen(),
+        '/proof_view': (context) => const ProofViewScreen(),
       },
     );
   }

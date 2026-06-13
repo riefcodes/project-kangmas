@@ -1,7 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LiveTrackingScreen extends StatelessWidget {
   const LiveTrackingScreen({super.key});
+
+  Future<void> _launchWhatsApp(BuildContext context, String? phoneNumber) async {
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nomor telepon tidak tersedia")),
+      );
+      return;
+    }
+
+    // Bersihkan nomor dari karakter non-digit
+    String cleanNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
+
+    // Ubah awalan 0 menjadi 62 (Kode Negara Indonesia) jika perlu
+    if (cleanNumber.startsWith('0')) {
+      cleanNumber = '62${cleanNumber.substring(1)}';
+    }
+
+    final Uri url = Uri.parse("https://wa.me/$cleanNumber");
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Tidak dapat membuka WhatsApp';
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal membuka WhatsApp: $e")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +157,7 @@ class LiveTrackingScreen extends StatelessWidget {
                         decoration: const BoxDecoration(color: Colors.amber, shape: BoxShape.circle),
                         child: IconButton(
                           icon: const Icon(Icons.call, color: Colors.white),
-                          onPressed: () {},
+                          onPressed: () => _launchWhatsApp(context, tukang['phone_number']),
                         ),
                       )
                     ],

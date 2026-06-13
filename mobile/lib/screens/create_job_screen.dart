@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class CreateJobScreen extends StatefulWidget {
@@ -15,12 +17,33 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
 
+  File? _problemImage;
+  final List<File> _locationImages = [];
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
-    // Set default tanggal hari ini
     _dateController.text = DateFormat('dd/MM/yy').format(DateTime.now());
     _timeController.text = "08:00 - 17:00";
+  }
+
+  Future<void> _pickProblemImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+    if (image != null) {
+      setState(() {
+        _problemImage = File(image.path);
+      });
+    }
+  }
+
+  Future<void> _pickLocationImages() async {
+    final List<XFile> images = await _picker.pickMultiImage();
+    if (images.isNotEmpty) {
+      setState(() {
+        _locationImages.addAll(images.map((img) => File(img.path)));
+      });
+    }
   }
 
   @override
@@ -98,8 +121,35 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                             const SizedBox(height: 8),
                             TextField(
                               controller: _dateController,
+                              readOnly: true,
+                              onTap: () async {
+                                DateTime? pickedDate = await showDatePicker(
+                                  context: context,
+                                  initialDate: DateTime.now(),
+                                  firstDate: DateTime.now(),
+                                  lastDate: DateTime(2101),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: const ColorScheme.light(
+                                          primary: Color(0xFFFFC107),
+                                          onPrimary: Colors.white,
+                                          onSurface: Colors.black,
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+                                if (pickedDate != null) {
+                                  setState(() {
+                                    _dateController.text = DateFormat('dd/MM/yy').format(pickedDate);
+                                  });
+                                }
+                              },
                               decoration: InputDecoration(
                                 hintText: 'dd/mm/yy',
+                                suffixIcon: const Icon(Icons.calendar_today, size: 18, color: Color(0xFFFFC107)),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               ),
@@ -161,28 +211,89 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     '* berupa gambar keadaan lapangan tempat yang membutuhkan bantuan',
                     style: TextStyle(fontSize: 10, color: Colors.grey),
                   ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFFFC107), width: 0.5),
-                      borderRadius: BorderRadius.circular(10),
+                  const SizedBox(height: 15),
+
+                  // Row Horizontal untuk Foto-foto
+                  SizedBox(
+                    height: 90,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _locationImages.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == _locationImages.length) {
+                          // Tombol Tambah (Box seperti di screenshot)
+                          return GestureDetector(
+                            onTap: _pickLocationImages,
+                            child: Container(
+                              width: 80,
+                              height: 80,
+                              margin: const EdgeInsets.only(right: 10),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: const Color(0xFFFFC107), width: 1),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: const Icon(Icons.add_photo_alternate_outlined, color: Colors.grey, size: 35),
+                            ),
+                          );
+                        }
+
+                        // Preview Gambar yang sudah diambil
+                        return Stack(
+                          children: [
+                            Container(
+                              width: 80,
+                              height: 80,
+                              margin: const EdgeInsets.only(right: 10, top: 5),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                image: DecorationImage(
+                                  image: FileImage(_locationImages[index]),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 5,
+                              top: 0,
+                              child: GestureDetector(
+                                onTap: () => setState(() => _locationImages.removeAt(index)),
+                                child: const CircleAvatar(
+                                  radius: 10,
+                                  backgroundColor: Colors.red,
+                                  child: Icon(Icons.close, size: 12, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                    child: const Icon(Icons.add_photo_alternate_outlined, color: Colors.grey, size: 40),
                   ),
+
                   const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
                       onPressed: () {
+                        if (_descriptionController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Deskripsi wajib diisi")));
+                          return;
+                        }
+                        if (_locationImages.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Minimal unggah 1 foto masalah")));
+                          return;
+                        }
+
+                        // Mengirim data ke ringkasan, foto pertama jadi problem_image
                         Navigator.pushNamed(context, '/order_summary', arguments: {
                           'category': widget.category,
                           'description': _descriptionController.text,
                           'price': _priceController.text,
                           'job_date': _dateController.text,
                           'job_time': _timeController.text,
+                          'problem_image': _locationImages.first,
+                          'location_images': _locationImages.length > 1 ? _locationImages.sublist(1) : <File>[],
                         });
                       },
                       style: ElevatedButton.styleFrom(

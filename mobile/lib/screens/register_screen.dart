@@ -51,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 30),
+              padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 20),
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: Color(0xFFFFC107),
@@ -63,9 +63,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
-                    onPressed: () => Navigator.pop(context),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      // Menampilkan Maskot Pengguna (karena registrasi aplikasi khusus user)
+                      Image.asset(
+                        'asset/images/pengguna maskot.webp',
+                        height: 70,
+                        fit: BoxFit.contain,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   const Text(

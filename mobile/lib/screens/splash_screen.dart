@@ -35,9 +35,24 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
-        child: CircularProgressIndicator(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Menampilkan logo kustom Anda di Splash Screen
+            Image.asset(
+              'asset/images/logo loading dan tombol tenggah.webp',
+              width: 150,
+              height: 150,
+            ),
+            const SizedBox(height: 30),
+            const CircularProgressIndicator(
+              color: Color(0xFFFFB800),
+            ),
+          ],
+        ),
       ),
     );
   }

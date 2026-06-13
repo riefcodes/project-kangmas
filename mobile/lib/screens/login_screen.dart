@@ -33,15 +33,17 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'user';
+    final bool isTukang = role == 'tukang';
+    final String mascotImage = isTukang ? 'asset/images/Tukang maskot.webp' : 'asset/images/pengguna maskot.webp';
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header Kuning
+            // Header Kuning dengan Maskot
             Container(
-              padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 40),
+              padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 20),
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: Color(0xFFFFC107),
@@ -53,11 +55,22 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
-                    onPressed: () => Navigator.pop(context),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      // Menampilkan Maskot Kecil di Header
+                      Image.asset(
+                        mascotImage,
+                        height: 80,
+                        fit: BoxFit.contain,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   const Text(
                     'Masuk',
                     style: TextStyle(
@@ -67,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   Text(
-                    'sebagai ${role == 'tukang' ? 'Tukang' : 'Pencari Tukang'}',
+                    'sebagai ${isTukang ? 'Tukang' : 'Pencari Tukang'}',
                     style: const TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ],

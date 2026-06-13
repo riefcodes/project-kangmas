@@ -1,15 +1,20 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
-  // GANTI IP ini sesuai dengan IPv4 laptop Anda (hasil ipconfig)
-  // Pastikan port :8000 disertakan jika menggunakan php artisan serve
   static const String baseUrl = 'http://192.168.101.23:8000/api';
+  static const String storageUrl = 'http://192.168.101.23:8000/storage';
 
   static Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+
+    if (kDebugMode) {
+      print("API Request Token: ${token != null ? 'Bearer ${token.substring(0, 10)}...' : 'MISSING'}");
+    }
 
     return {
       'Content-Type': 'application/json',
@@ -60,19 +65,60 @@ class ApiService {
     return _processResponse(response);
   }
 
+  static Future<dynamic> multipartPost({
+    required String endpoint,
+    Map<String, String>? fields,
+    File? singleFile,
+    String singleFileKey = 'file',
+    List<File>? multiFiles,
+    String multiFilesKey = 'files[]',
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    final uri = Uri.parse('$baseUrl$endpoint');
+    var request = http.MultipartRequest('POST', uri);
+
+    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Accept'] = 'application/json';
+
+    if (fields != null) {
+      request.fields.addAll(fields);
+    }
+
+    if (singleFile != null) {
+      request.files.add(await http.MultipartFile.fromPath(singleFileKey, singleFile.path));
+    }
+
+    if (multiFiles != null) {
+      for (var file in multiFiles) {
+        request.files.add(await http.MultipartFile.fromPath(multiFilesKey, file.path));
+      }
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return _processResponse(response);
+  }
+
   static dynamic _processResponse(http.Response response) {
     final body = response.body;
+    if (kDebugMode) {
+      print("API Response (${response.statusCode}): $body");
+    }
+
+    final decodedBody = jsonDecode(body);
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(body);
+      return decodedBody;
     } else {
-      try {
-        final errorData = jsonDecode(body);
-        // Jika ada pesan dari server, pakai itu. Jika tidak, pakai status code.
-        throw Exception(errorData['message'] ?? 'Error ${response.statusCode}');
-      } catch (e) {
-        // Jika body bukan JSON (misal HTML error page), tampilkan potongan body-nya untuk debug
-        throw Exception('Server error (${response.statusCode}): ${body.length > 100 ? body.substring(0, 100) : body}');
+      final message = decodedBody['message'] ?? 'Terjadi kesalahan (${response.statusCode})';
+
+      if (response.statusCode == 401 || (response.statusCode == 403 && message == "Unauthorized")) {
+        throw Exception("Sesi Anda telah berakhir atau akses ditolak. Silakan login kembali.");
       }
+
+      throw Exception(message);
     }
   }
 }

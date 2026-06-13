@@ -1,150 +1,249 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
   @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  List<dynamic> _historyOrders = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHistory();
+  }
+
+  Future<void> _fetchHistory() async {
+    try {
+      final response = await ApiService.get('/orders');
+      if (response['success']) {
+        if (mounted) {
+          setState(() {
+            // Sort by ID descending (newest first)
+            _historyOrders = (response['data'] as List).toList()
+              ..sort((a, b) => b['id'].compareTo(a['id']));
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+        elevation: 0.5,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Histori Transaksi',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          _buildHistoryCard(
-            name: 'Titus Aji Saka',
-            task: 'pemasangan kran air & pe..',
-            status: 'Sedang Berlangsung',
-            isActive: true,
-          ),
-          _buildHistoryCard(
-            name: 'Belagio Hantono',
-            task: 'pembersihan teras rumah',
-            status: 'Kemarin pada 13.42 WIB',
-          ),
-          _buildHistoryCard(
-            name: 'Rendra Wardana',
-            task: 'Perbaikan AC',
-            status: '12 Juni pada 09.23 WIB',
-          ),
-          _buildHistoryCard(
-            name: 'Andy Santosa',
-            task: 'Pemasangan Jendela di kam..',
-            status: '8 Juni pada 15.34 WIB',
-          ),
-          _buildHistoryCard(
-            name: 'Siti Barokah',
-            task: 'Perbaikan genteng bocor',
-            status: '17 Mei pada 08.46 WIB',
-          ),
-          _buildHistoryCard(
-            name: 'Revina Gracia',
-            task: 'Perbaikan kran air bocor',
-            status: '8 Februari pada 10.28 WIB',
-          ),
-          _buildHistoryCard(
-            name: 'Louise Chen',
-            task: 'Pembersihan Halaman Rumah',
-            status: '5 Februari pada 08.27 WIB',
-          ),
-        ],
+      body: RefreshIndicator(
+        onRefresh: _fetchHistory,
+        color: Colors.amber,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.amber))
+            : _historyOrders.isEmpty
+                ? _buildEmptyState()
+                : ListView.builder(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: _historyOrders.length,
+                    itemBuilder: (context, index) {
+                      return _buildHistoryCard(_historyOrders[index]);
+                    },
+                  ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Colors.amber,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.build, color: Colors.white),
-      ),
+      bottomNavigationBar: _buildBottomNav(context, auth),
+      floatingActionButton: _buildFAB(context, auth),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  Widget _buildHistoryCard({
-    required String name,
-    required String task,
-    required String status,
-    bool isActive = false,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.amber.shade100),
-      ),
-      child: Row(
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded( // Menambahkan Expanded untuk mencegah overflow pada teks sebelah kiri
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  task,
-                  overflow: TextOverflow.ellipsis, // Tambahkan titik-titik jika teks terlalu panjang
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Row(
-            mainAxisSize: MainAxisSize.min, // Agar row kanan tidak memakan ruang berlebih
-            children: [
-              if (isActive)
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                ),
-              const SizedBox(width: 5),
-              Text(
-                status,
-                style: TextStyle(
-                  color: isActive ? Colors.green : Colors.grey,
-                  fontSize: 11, // Sedikit diperkecil
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
+          Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          const Text("Belum ada riwayat pesanan", style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildHistoryCard(dynamic order) {
+    String status = order['status'] ?? 'pending';
+    Color statusColor = Colors.grey;
+    String statusLabel = status.toUpperCase();
+
+    if (status == 'completed') {
+      statusColor = Colors.green;
+      statusLabel = "SELESAI";
+    } else if (status == 'cancelled') {
+      statusColor = Colors.red;
+      statusLabel = "DIBATALKAN";
+    } else if (status == 'accepted' || status == 'waiting_approval') {
+      statusColor = Colors.blue;
+      statusLabel = "DALAM PROSES";
+    } else if (status == 'pending') {
+      statusColor = Colors.amber;
+      statusLabel = "MENUNGGU";
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: () {
+            if (status == 'completed' || status == 'waiting_approval') {
+              Navigator.pushNamed(context, '/proof_view', arguments: order);
+            } else if (status == 'accepted') {
+              Navigator.pushNamed(context, '/live_tracking', arguments: order);
+            } else {
+              Navigator.pushNamed(context, '/job_detail', arguments: order);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(_getIconForCategory(order['category']), color: statusColor),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order['category'] ?? 'Layanan',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order['description'] ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      statusLabel,
+                      style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 11),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatDate(order['created_at']),
+                      style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getIconForCategory(String? category) {
+    switch (category?.toLowerCase()) {
+      case 'bangunan': return Icons.home_work_rounded;
+      case 'perbaikan': return Icons.build_rounded;
+      case 'pemasangan': return Icons.add_business_rounded;
+      case 'bersih': return Icons.cleaning_services_rounded;
+      case 'listrik': return Icons.electric_bolt_rounded;
+      case 'pembantu': return Icons.person_search_rounded;
+      case 'ac': return Icons.ac_unit_rounded;
+      default: return Icons.miscellaneous_services_rounded;
+    }
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return "";
+    try {
+      final date = DateTime.parse(dateStr).toLocal();
+      return "${date.day}/${date.month}/${date.year}";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  Widget _buildFAB(BuildContext context, AuthProvider auth) {
+    return FloatingActionButton(
+      onPressed: () => Navigator.pushReplacementNamed(context, auth.user?.role == 'tukang' ? '/tukang_home' : '/user_home'),
+      backgroundColor: Colors.white,
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Image.asset('asset/images/logo loading dan tombol tenggah.webp', fit: BoxFit.contain),
+      ),
+    );
+  }
+
+  Widget _buildBottomNav(BuildContext context, AuthProvider auth) {
     return BottomAppBar(
+      notchMargin: 10,
       shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
       child: SizedBox(
-        height: 60,
+        height: 65,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            IconButton(icon: const Icon(Icons.home), onPressed: () {}),
-            IconButton(icon: const Icon(Icons.notifications_none), onPressed: () {}),
+            IconButton(
+              icon: const Icon(Icons.home_rounded, color: Colors.grey),
+              onPressed: () => Navigator.pushReplacementNamed(context, auth.user?.role == 'tukang' ? '/tukang_home' : '/user_home'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.receipt_long_rounded, color: Colors.amber, size: 28),
+              onPressed: () {}
+            ),
             const SizedBox(width: 40),
-            IconButton(icon: const Icon(Icons.assignment, color: Colors.amber), onPressed: () {}),
-            IconButton(icon: const Icon(Icons.chat_bubble_outline), onPressed: () {}),
+            IconButton(
+              icon: const Icon(Icons.chat_rounded, color: Colors.grey),
+              onPressed: () => Navigator.pushReplacementNamed(context, '/chat_list'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_rounded, color: Colors.grey),
+              onPressed: () => Navigator.pushReplacementNamed(context, '/profile'),
+            ),
           ],
         ),
       ),
