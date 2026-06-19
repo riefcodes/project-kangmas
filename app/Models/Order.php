@@ -11,8 +11,13 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'tukang_id',
+        'category',
         'description',
+        'address',
+        'job_date',
+        'job_time',
         'image_path',
+        'proof_image',
         'status',
         'total_price',
     ];
@@ -30,5 +35,10 @@ class Order extends Model
     public function review(): HasOne
     {
         return $this->hasOne(Review::class);
+    }
+
+    public function locationImages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderImage::class);
     }
 }

@@ -11,20 +11,97 @@ use Illuminate\Http\Request;
 class AdminController extends Controller
 {
     /**
-     * Dashboard statistics.
+     * Dashboard statistics with top-rated tukangs.
      */
     public function dashboard(): JsonResponse
     {
+        $totalUsers = User::where('role', 'user')->count();
+        $totalTukangs = User::where('role', 'tukang')->count();
+        $approvedTukangs = User::where('role', 'tukang')
+            ->whereHas('tukangProfile', function ($q) {
+                $q->where('status', 'approved');
+            })->count();
+
+        $orderStats = [
+            'pending'   => Order::where('status', 'pending')->count(),
+            'accepted'  => Order::where('status', 'accepted')->count(),
+            'completed' => Order::where('status', 'completed')->count(),
+            'cancelled' => Order::where('status', 'cancelled')->count(),
+            'total'     => Order::count(),
+        ];
+
+        // Get top-rated tukangs
+        $topTukangs = User::where('role', 'tukang')
+            ->whereHas('tukangProfile', function ($query) {
+                $query->where('status', 'approved');
+            })
+            ->with('tukangProfile')
+            ->withCount('tukangOrders')
+            ->withAvg('tukangReviews as rating_avg', 'rating')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'category' => $user->tukangProfile?->category ?? '-',
+                    'rating' => $user->rating_avg ? round($user->rating_avg, 1) : 0,
+                    'total_orders' => $user->tukang_orders_count ?? 0,
+                ];
+            })
+            ->sortByDesc('rating')
+            ->take(5)
+            ->values();
+
+        // Get top users ranking by completed orders and spending
+        $topUsers = User::where('role', 'user')
+            ->withCount([
+                'orders as total_orders_count',
+                'orders as completed_orders_count' => function ($query) {
+                    $query->where('status', 'completed');
+                },
+            ])
+            ->withSum('orders as total_spent', 'total_price')
+            ->orderByDesc('completed_orders_count')
+            ->orderByDesc('total_spent')
+            ->take(5)
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'completed_orders' => $user->completed_orders_count ?? 0,
+                    'total_orders' => $user->total_orders_count ?? 0,
+                    'total_spent' => $user->total_spent ?? 0,
+                ];
+            });
+
+        // Get recent orders
+        $recentOrders = Order::with([
+            'user:id,name,phone_number',
+            'tukang:id,name',
+        ])
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'user_name' => $order->user?->name ?? '-',
+                    'tukang_name' => $order->tukang?->name ?? '-',
+                    'category' => $order->category ?? '-',
+                    'status' => $order->status,
+                    'created_at' => $order->created_at->format('Y-m-d H:i'),
+                ];
+            });
+
         $stats = [
-            'total_users'   => User::where('role', 'user')->count(),
-            'total_tukangs' => User::where('role', 'tukang')->count(),
-            'orders' => [
-                'pending'   => Order::where('status', 'pending')->count(),
-                'accepted'  => Order::where('status', 'accepted')->count(),
-                'completed' => Order::where('status', 'completed')->count(),
-                'cancelled' => Order::where('status', 'cancelled')->count(),
-                'total'     => Order::count(),
-            ],
+            'total_users' => $totalUsers,
+            'total_tukangs' => $totalTukangs,
+            'approved_tukangs' => $approvedTukangs,
+            'orders' => $orderStats,
+            'top_users' => $topUsers,
+            'top_rated_tukangs' => $topTukangs,
+            'recent_orders' => $recentOrders,
         ];
 
         return response()->json([
@@ -70,14 +147,14 @@ class AdminController extends Controller
         }
 
         $orders = $query->paginate($request->query('per_page', 100));
- 
+
          return response()->json([
              'success' => true,
              'message' => 'List of orders',
              'data'    => $orders,
          ]);
      }
- 
+
      /**
       * Get analytics for all tukangs.
       */
@@ -100,7 +177,7 @@ class AdminController extends Controller
                  $uniqueCustomers = Order::where('tukang_id', $user->id)
                      ->distinct()
                      ->count('user_id');
- 
+
                  return [
                      'id' => $user->id,
                      'name' => $user->name,
@@ -116,11 +193,67 @@ class AdminController extends Controller
                      'unique_customers' => $uniqueCustomers,
                  ];
              });
- 
+
          return response()->json([
              'success' => true,
              'message' => 'Tukang analytics retrieved successfully',
              'data'    => $tukangs,
          ]);
      }
+
+    /**
+     * Verifikasi Tukang (Approve/Reject).
+     */
+    public function verifyTukang(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'status' => 'required|in:approved,rejected',
+        ]);
+
+        $user = User::where('id', $id)->where('role', 'tukang')->firstOrFail();
+        $profile = $user->tukangProfile;
+
+        if (!$profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Profil Tukang tidak ditemukan',
+            ], 404);
+        }
+
+        $profile->status = $request->status;
+        $profile->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Tukang berhasil di-{$request->status}",
+            'data'    => $profile,
+        ]);
+    }
+
+    /**
+     * Toggle Blacklist Tukang.
+     */
+    public function toggleBlacklist(Request $request, $id): JsonResponse
+    {
+        $user = User::where('id', $id)->where('role', 'tukang')->firstOrFail();
+        $profile = $user->tukangProfile;
+
+        if (!$profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Profil Tukang tidak ditemukan',
+            ], 404);
+        }
+
+        $profile->is_blacklisted = !$profile->is_blacklisted;
+        $profile->save();
+
+        $status = $profile->is_blacklisted ? 'diblokir' : 'dibuka blokirnya';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Tukang berhasil {$status}",
+            'data'    => $profile,
+        ]);
+    }
  }
