@@ -93,7 +93,7 @@ class AuthChoiceScreen extends StatelessWidget {
                         color: const Color(0xFF0F172A),
                         onTap: () async {
                           if (isTukang) {
-                            final Uri url = Uri.parse('http://192.168.101.23:8000/register-tukang');
+                            final Uri url = Uri.parse('http://localhost:8000/register-tukang');
                             try {
                               await launchUrl(url, mode: LaunchMode.externalApplication);
                             } catch (e) {
