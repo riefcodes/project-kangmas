@@ -121,7 +121,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 ),
               ),
 
-              // 1. BAGIAN KATEGORI (Dipindah ke bagian atass)
+              // 1. BAGIAN KATEGORI (Sekarang di Atas)
               Padding(
                 padding: const EdgeInsets.all(25),
                 child: Column(

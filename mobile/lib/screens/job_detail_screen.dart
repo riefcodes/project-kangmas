@@ -214,7 +214,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     ),
                   ],
 
-                  //  poto lokasi skitar
+                  // --- FOTO LOKASI SEKITAR ---
                   if (job['location_images'] != null && (job['location_images'] as List).isNotEmpty) ...[
                     const SizedBox(height: 30),
                     const Text("Foto Lokasi Sekitar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -246,7 +246,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     ),
                   ],
 
-                  //  bukti kelar (klo ada)
+                  // --- BUKTI PEKERJAAN SELESAI (Jika Ada) ---
                   if (job['proof_image'] != null) ...[
                     const SizedBox(height: 30),
                     const Text("Bukti Hasil Pekerjaan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
