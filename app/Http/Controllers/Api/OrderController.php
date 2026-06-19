@@ -158,14 +158,14 @@ class OrderController extends Controller
 
         if ($user->role === 'tukang') {
             // Tukang bisa mengupdate jika:
-            // 1. Dia adalah tukang yang sudah ditunjuk (untuk complete)
-            // 2. Pesanan masih pending dan belum ada tukangnya (untuk accept)
+            // 1. Dia adalah tukang yang sudah ditunjuk (untuk complete atau accept dari direct order)
+            // 2. Pesanan masih pending dan belum ada tukangnya (untuk accept dari open job)
             if ($order->tukang_id !== null && $order->tukang_id !== $user->id) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
             }
 
             $validated = $request->validate([
-                'status'          => 'required|in:accepted,completed,waiting_approval',
+                'status'          => 'required|in:accepted,completed,waiting_approval,cancelled',
                 'total_price'     => 'nullable|integer|min:0',
                 'proof_image'     => 'nullable|image|max:20480', // Naikkan ke 20MB
                 'location_images'   => 'nullable|array',
@@ -173,10 +173,23 @@ class OrderController extends Controller
             ]);
 
             if ($validated['status'] === 'accepted') {
-                if ($order->status !== 'pending' || $order->tukang_id !== null) {
-                    return response()->json(['success' => false, 'message' => 'Pekerjaan sudah diambil orang lain'], 422);
+                // Jika direct order (sudah ada tukang_id), pastikan itu milik tukang ini
+                // Jika open job (tukang_id null), ambil pekerjaannya
+                if ($order->status !== 'pending') {
+                    return response()->json(['success' => false, 'message' => 'Pekerjaan sudah tidak tersedia'], 422);
                 }
-                $order->tukang_id = $user->id;
+
+                if ($order->tukang_id === null) {
+                    $order->tukang_id = $user->id;
+                }
+            }
+
+            if ($validated['status'] === 'cancelled') {
+                // Digunakan untuk menolak (reject) direct order ATAU menandai gagal saat sudah berjalan
+                if (!in_array($order->status, ['pending', 'accepted']) || $order->tukang_id !== $user->id) {
+                    return response()->json(['success' => false, 'message' => 'Tidak dapat membatalkan pekerjaan ini'], 422);
+                }
+                $order->total_price = 0;
             }
 
             if ($validated['status'] === 'completed' || $validated['status'] === 'waiting_approval') {

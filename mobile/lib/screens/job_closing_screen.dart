@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
@@ -12,15 +13,15 @@ class JobClosingScreen extends StatefulWidget {
 
 class _JobClosingScreenState extends State<JobClosingScreen> {
   bool _isLoading = false;
-  File? _arrivalImage;
-  File? _proofImage;
+  XFile? _arrivalImage;
+  XFile? _proofImage;
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickArrivalImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.camera);
     if (image != null) {
       setState(() {
-        _arrivalImage = File(image.path);
+        _arrivalImage = image;
       });
     }
   }
@@ -29,9 +30,55 @@ class _JobClosingScreenState extends State<JobClosingScreen> {
     final XFile? image = await _picker.pickImage(source: ImageSource.camera);
     if (image != null) {
       setState(() {
-        _proofImage = File(image.path);
+        _proofImage = image;
       });
     }
+  }
+
+  Future<void> _failJob(dynamic job) async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.post('/orders/${job['id']}/reject', {
+        'status': 'cancelled',
+      });
+
+      if (response['success']) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Pekerjaan ditandai sebagai gagal/dibatalkan"), backgroundColor: Colors.red),
+          );
+          Navigator.pushNamedAndRemoveUntil(context, '/tukang_home', (route) => false);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memproses: $e"), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showFailConfirmation(dynamic job) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Tandai Gagal?"),
+        content: const Text("Apakah Anda yakin ingin menandai pekerjaan ini sebagai gagal atau dibatalkan?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _failJob(job);
+            },
+            child: const Text("Ya, Gagal", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _submitForApproval(dynamic job) async {
@@ -44,8 +91,6 @@ class _JobClosingScreenState extends State<JobClosingScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // Kita kirim foto lokasi (saat tiba) dan foto bukti (selesai)
-      // Status diubah menjadi 'waiting_approval' agar user bisa approve
       final response = await ApiService.multipartPost(
         endpoint: '/orders/${job['id']}/complete',
         fields: {
@@ -128,25 +173,48 @@ class _JobClosingScreenState extends State<JobClosingScreen> {
 
             const SizedBox(height: 50),
 
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-              child: ElevatedButton(
-                onPressed: (_isLoading || _arrivalImage == null || _proofImage == null)
-                    ? null
-                    : () => _submitForApproval(job),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFB800),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                  disabledBackgroundColor: Colors.grey[300],
-                ),
-                child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      'KIRIM UNTUK PERSETUJUAN',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 60,
+                    child: OutlinedButton(
+                      onPressed: _isLoading ? null : () => _showFailConfirmation(job),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.red),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      ),
+                      child: const Text(
+                        'GAGAL / BATAL',
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
                     ),
-              ),
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 60,
+                    child: ElevatedButton(
+                      onPressed: (_isLoading || _arrivalImage == null || _proofImage == null)
+                          ? null
+                          : () => _submitForApproval(job),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFB800),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        disabledBackgroundColor: Colors.grey[300],
+                      ),
+                      child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            'SELESAI',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
           ],
@@ -177,7 +245,7 @@ class _JobClosingScreenState extends State<JobClosingScreen> {
     );
   }
 
-  Widget _buildImagePickerBox({File? image, VoidCallback? onTap, required String placeholder}) {
+  Widget _buildImagePickerBox({XFile? image, VoidCallback? onTap, required String placeholder}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -191,7 +259,9 @@ class _JobClosingScreenState extends State<JobClosingScreen> {
         child: image != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(13),
-                child: Image.file(image, fit: BoxFit.cover),
+                child: kIsWeb
+                  ? Image.network(image.path, fit: BoxFit.cover)
+                  : Image.file(File(image.path), fit: BoxFit.cover),
               )
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,

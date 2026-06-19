@@ -61,15 +61,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
         color: Colors.amber,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Colors.amber))
-            : _historyOrders.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: _historyOrders.length,
-                    itemBuilder: (context, index) {
-                      return _buildHistoryCard(_historyOrders[index]);
-                    },
-                  ),
+            : () {
+                // Filter data berdasarkan role
+                final displayOrders = auth.user?.role == 'tukang'
+                    ? _historyOrders.where((o) => o['tukang_id'] == auth.user?.id).toList()
+                    : _historyOrders;
+
+                if (displayOrders.isEmpty) return _buildEmptyState();
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: displayOrders.length,
+                  itemBuilder: (context, index) {
+                    return _buildHistoryCard(displayOrders[index]);
+                  },
+                );
+              }(),
       ),
       bottomNavigationBar: _buildBottomNav(context, auth),
       floatingActionButton: _buildFAB(context, auth),
@@ -101,7 +108,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } else if (status == 'cancelled') {
       statusColor = Colors.red;
       statusLabel = "DIBATALKAN";
-    } else if (status == 'accepted' || status == 'waiting_approval') {
+    } else if (status == 'waiting_approval') {
+      statusColor = Colors.orange;
+      statusLabel = "MENUNGGU KONFIRMASI";
+    } else if (status == 'accepted') {
       statusColor = Colors.blue;
       statusLabel = "DALAM PROSES";
     } else if (status == 'pending') {
@@ -123,8 +133,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
           onTap: () {
             if (status == 'completed' || status == 'waiting_approval') {
               Navigator.pushNamed(context, '/proof_view', arguments: order);
-            } else if (status == 'accepted') {
-              Navigator.pushNamed(context, '/live_tracking', arguments: order);
             } else {
               Navigator.pushNamed(context, '/job_detail', arguments: order);
             }

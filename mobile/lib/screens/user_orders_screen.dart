@@ -50,6 +50,18 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
     }
   }
 
+  Future<void> _approveOrder(int id) async {
+    try {
+      final res = await ApiService.post('/orders/$id/approve', {});
+      if (res['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pekerjaan telah disetujui dan selesai!'), backgroundColor: Colors.green));
+        _fetchOrders();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal menyetujui: $e"), backgroundColor: Colors.red));
+    }
+  }
+
   Future<void> _openWhatsApp(String phone) async {
     // Basic format assuming phone starts with 0 or 62
     String formattedPhone = phone;
@@ -89,7 +101,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                   itemCount: orders.length,
                   itemBuilder: (context, index) {
                     final order = orders[index];
-                    
+
                     Color statusColor = Colors.grey;
                     Color statusBgColor = Colors.grey.shade100;
                     String statusText = 'MENUNGGU';
@@ -104,6 +116,11 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                       statusBgColor = Colors.blue.shade50;
                       statusText = 'DITERIMA';
                     }
+                    if (order.status == 'waiting_approval') {
+                      statusColor = Colors.purple.shade700;
+                      statusBgColor = Colors.purple.shade50;
+                      statusText = 'BUTUH PERSETUJUAN';
+                    }
                     if (order.status == 'completed') {
                       statusColor = Colors.green.shade700;
                       statusBgColor = Colors.green.shade50;
@@ -112,7 +129,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                     if (order.status == 'cancelled') {
                       statusColor = Colors.red.shade700;
                       statusBgColor = Colors.red.shade50;
-                      statusText = 'BATAL';
+                      statusText = order.totalPrice == 0 ? 'GAGAL / BATAL' : 'BATAL';
                     }
 
                     return Container(
@@ -147,7 +164,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                                     border: Border.all(color: statusColor.withOpacity(0.3)),
                                   ),
                                   child: Text(
-                                    statusText, 
+                                    statusText,
                                     style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)
                                   ),
                                 ),
@@ -187,7 +204,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                                 ],
                               ),
                             ),
-                            
+
                             if (order.totalPrice != null) ...[
                               const SizedBox(height: 16),
                               Row(
@@ -229,6 +246,44 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                                       child: const Text('Batalkan', style: TextStyle(fontWeight: FontWeight.bold)),
                                     ),
                                   ),
+                                ],
+                                if (order.status == 'waiting_approval' || (order.status == 'cancelled' && (order.proofImage != null || order.locationImages != null))) ...[
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.purple.shade600,
+                                        side: BorderSide(color: Colors.purple.shade600),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                      icon: const Icon(Icons.image_search, size: 18),
+                                      label: const Text('Cek Bukti', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                      onPressed: () {
+                                        Navigator.pushNamed(context, '/proof_view', arguments: {
+                                          'id': order.id,
+                                          'category': order.category,
+                                          'description': order.description,
+                                          'proof_image': order.proofImage,
+                                          'location_images': order.locationImages,
+                                          'total_price': order.totalPrice,
+                                          'tukang': {'name': order.tukang?.name}
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  if (order.status == 'waiting_approval') ...[
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        onPressed: () => _approveOrder(order.id),
+                                        child: const Text('Selesaikan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                                 if (order.status == 'completed' && order.review == null)
                                   Expanded(

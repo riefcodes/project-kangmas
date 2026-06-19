@@ -6,10 +6,15 @@ class ProofViewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final order = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final String? proofImage = order['proof_image'];
-    final List<dynamic> locationImages = order['location_images'] ?? [];
-    final tukang = order['tukang'] ?? {};
+    final Map<String, dynamic> args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+
+    // Normalize arguments since they might come from different screens
+    final String? proofImage = args['proof_image'];
+    final List<dynamic> locationImages = args['location_images'] ?? [];
+    final Map<String, dynamic> tukang = args['tukang'] is Map ? args['tukang'] : {'name': 'Tukang Kangmas'};
+    final String category = args['category'] ?? '-';
+    final String description = args['description'] ?? '-';
+    final dynamic totalPrice = args['total_price'];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -99,9 +104,9 @@ class ProofViewScreen extends StatelessWidget {
 
                   const Text("Detail Pekerjaan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  _buildDetailItem(Icons.category_rounded, "Kategori", order['category'] ?? '-'),
-                  _buildDetailItem(Icons.description_rounded, "Deskripsi", order['description'] ?? '-'),
-                  _buildDetailItem(Icons.payments_rounded, "Biaya Dibayarkan", "Rp ${order['total_price'] ?? 0}"),
+                  _buildDetailItem(Icons.category_rounded, "Kategori", category),
+                  _buildDetailItem(Icons.description_rounded, "Deskripsi", description),
+                  _buildDetailItem(Icons.payments_rounded, "Biaya Dibayarkan", "Rp ${totalPrice ?? 0}"),
 
                   const SizedBox(height: 40),
 

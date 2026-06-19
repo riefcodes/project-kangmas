@@ -14,7 +14,9 @@ class TukangHomeScreen extends StatefulWidget {
 class _TukangHomeScreenState extends State<TukangHomeScreen> {
   List<dynamic> _availableJobs = [];
   List<dynamic> _myActiveJobs = [];
+  List<dynamic> _pendingRequests = [];
   bool _isLoading = true;
+  bool _isActionLoading = false;
   Timer? _refreshTimer;
 
   @override
@@ -50,6 +52,11 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
                 .where((o) => o['status'] == 'accepted' && o['tukang_id'] == auth.user?.id)
                 .toList();
 
+            // Permintaan pekerjaan langsung (status pending & tukang_id adalah saya)
+            _pendingRequests = allOrders
+                .where((o) => o['status'] == 'pending' && o['tukang_id'] == auth.user?.id)
+                .toList();
+
             _isLoading = false;
           });
         }
@@ -58,6 +65,36 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _handleJobAction(int jobId, String action) async {
+    setState(() => _isActionLoading = true);
+    try {
+      final endpoint = action == 'accept' ? '/orders/$jobId/accept' : '/orders/$jobId/reject';
+      final response = await ApiService.post(endpoint, {
+        'status': action == 'accept' ? 'accepted' : 'cancelled',
+      });
+
+      if (response['success']) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(action == 'accept' ? "Pekerjaan diterima!" : "Pekerjaan ditolak"),
+              backgroundColor: action == 'accept' ? Colors.green : Colors.red,
+            ),
+          );
+          _fetchJobs();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memproses: $e"), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isActionLoading = false);
     }
   }
 
@@ -117,6 +154,33 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
               ),
             ),
 
+            // SEKSI 0: PERMINTAAN MASUK (PENDING UNTUK SAYA)
+            if (_pendingRequests.isNotEmpty) ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(25, 25, 25, 10),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Permintaan Pekerjaan Baru",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
+                      const SizedBox(height: 5),
+                      Text("Ada pelanggan yang memintamu secara langsung", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => _buildRequestCard(_pendingRequests[index]),
+                    childCount: _pendingRequests.length,
+                  ),
+                ),
+              ),
+            ],
+
             // SEKSI 1: PEKERJAAN SAYA (AKTIF)
             if (_myActiveJobs.isNotEmpty) ...[
               SliverPadding(
@@ -163,7 +227,7 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator(color: Colors.amber)),
               )
-            else if (_availableJobs.isEmpty && _myActiveJobs.isEmpty)
+            else if (_availableJobs.isEmpty && _myActiveJobs.isEmpty && _pendingRequests.isEmpty)
               SliverFillRemaining(
                 child: Center(
                   child: Column(
@@ -202,6 +266,58 @@ class _TukangHomeScreenState extends State<TukangHomeScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  // Card untuk PERMINTAAN MASUK (Pending Direct)
+  Widget _buildRequestCard(dynamic job) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.notification_important_rounded, color: Colors.orange),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(job['category'] ?? 'Pekerjaan Baru',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(job['address'] ?? '', style: const TextStyle(fontSize: 13, color: Colors.black87)),
+          const SizedBox(height: 5),
+          Text("Biaya: Rp ${job['total_price'] ?? 0}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+          const Divider(height: 25),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _isActionLoading ? null : () => _handleJobAction(job['id'], 'reject'),
+                  style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red), foregroundColor: Colors.red),
+                  child: const Text("Tolak"),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isActionLoading ? null : () => _handleJobAction(job['id'], 'accept'),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  child: _isActionLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text("Terima"),
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
     );
   }
 
