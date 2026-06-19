@@ -3,13 +3,33 @@ import api from '../../services/api';
 import { FileText, FolderOpen, IdCard, MapPin, Star, ClipboardList, ShoppingBag, Calendar, DollarSign, User as UserIcon, Home as HomeIcon } from 'lucide-react';
 import DashboardHome from './DashboardHome';
 
+// Normalize any storage URL/path to a relative /storage/... path
+// Handles: full URLs (http://x.x.x.x:8000/storage/...), relative paths (/storage/...), raw paths (documents/ktp/...)
+function normalizeStorageUrl(urlOrPath) {
+  if (!urlOrPath) return null;
+  // If it's already a full URL, extract just the path part after /storage/
+  if (urlOrPath.startsWith('http')) {
+    try {
+      const parsed = new URL(urlOrPath);
+      // Use just the pathname so it's relative to current origin
+      return parsed.pathname;
+    } catch (e) {
+      // fallback
+    }
+  }
+  // If it already starts with /storage, return as-is
+  if (urlOrPath.startsWith('/storage')) return urlOrPath;
+  // Raw path from DB like "documents/ktp/xxx.jpg"
+  return `/storage/${urlOrPath}`;
+}
+
 function DocumentModal({ tukang, onClose }) {
   if (!tukang) return null;
 
   const docs = [
-    { label: 'Foto KTP', url: tukang.ktp_url },
-    { label: 'Selfie dengan KTP', url: tukang.selfie_url },
-    { label: 'Portofolio', url: tukang.portofolio_url },
+    { label: 'Foto KTP', url: normalizeStorageUrl(tukang.ktp_url) },
+    { label: 'Selfie dengan KTP', url: normalizeStorageUrl(tukang.selfie_url) },
+    { label: 'Portofolio', url: normalizeStorageUrl(tukang.portofolio_url) },
   ];
 
   return (
@@ -110,6 +130,11 @@ function DocumentModal({ tukang, onClose }) {
                         src={doc.url}
                         alt={doc.label}
                         className="max-h-64 max-w-full rounded-lg object-contain shadow border border-gray-200 hover:opacity-90 transition"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<div class="text-center text-red-400 py-8"><p class="text-sm font-semibold">Gagal memuat gambar</p><p class="text-xs text-gray-400 mt-1">File mungkin belum tersedia di server</p></div>';
+                        }}
                       />
                     </a>
                   )
@@ -156,11 +181,7 @@ export default function AdminDashboard() {
         const users = res.data.data.data || res.data.data;
         const approvedUsers = users.filter(u => u.tukang_profile && u.tukang_profile.status === 'approved');
         const formatted = approvedUsers.map(u => {
-          const getStorageUrl = (path) => {
-            if (!path) return null;
-            if (path.startsWith('http')) return path;
-            return `/storage/${path}`;
-          };
+          const getStorageUrl = (path) => normalizeStorageUrl(path);
 
           return {
             id: u.tukang_profile?.id || u.id,

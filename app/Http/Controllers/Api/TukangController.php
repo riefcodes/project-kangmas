@@ -87,9 +87,9 @@ class TukangController extends Controller
                     'address'        => $p->address,
                     'lat'            => $p->lat,
                     'lng'            => $p->lng,
-                    'ktp_url'        => $p->ktp_path ? asset('storage/' . $p->ktp_path) : null,
-                    'selfie_url'     => $p->selfie_path ? asset('storage/' . $p->selfie_path) : null,
-                    'portofolio_url' => $p->portofolio_path ? asset('storage/' . $p->portofolio_path) : null,
+                    'ktp_url'        => $p->ktp_path ? url('storage/' . $p->ktp_path) : null,
+                    'selfie_url'     => $p->selfie_path ? url('storage/' . $p->selfie_path) : null,
+                    'portofolio_url' => $p->portofolio_path ? url('storage/' . $p->portofolio_path) : null,
                 ];
             });
 
