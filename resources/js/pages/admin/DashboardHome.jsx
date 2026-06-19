@@ -1,8 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, Briefcase, CheckCircle, AlertCircle, Star, TrendingUp, Clock, Shield } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Users, Briefcase, CheckCircle, AlertCircle, Star, Clock, ShieldAlert } from 'lucide-react';
 import api from '../../services/api';
 
+/* ───────── Color Palette ───────── */
+const COLORS = {
+  emerald: '#10b981',
+  blue:    '#3b82f6',
+  amber:   '#f59e0b',
+  rose:    '#ef4444',
+  violet:  '#8b5cf6',
+  cyan:    '#06b6d4',
+  pink:    '#ec4899',
+  indigo:  '#6366f1',
+  teal:    '#14b8a6',
+  orange:  '#f97316',
+};
+
+const PIE_COLORS = [COLORS.emerald, COLORS.blue, COLORS.amber, COLORS.rose];
+const CATEGORY_COLORS = [
+  COLORS.blue, COLORS.violet, COLORS.cyan, COLORS.pink,
+  COLORS.indigo, COLORS.teal, COLORS.orange, COLORS.emerald,
+];
+
+/* ───────── Custom Tooltip Components ───────── */
+function OrderPieTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const { name, value, fill } = payload[0];
+  return (
+    <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200/60 px-4 py-3">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: fill }} />
+        <span className="text-sm font-semibold text-gray-800">{name}</span>
+      </div>
+      <p className="text-lg font-bold text-gray-900">{value} pesanan</p>
+    </div>
+  );
+}
+
+function CategoryBarTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200/60 px-4 py-3">
+      <p className="text-sm font-semibold text-gray-800">{payload[0].payload.category}</p>
+      <p className="text-lg font-bold text-gray-900">{payload[0].value} tukang</p>
+    </div>
+  );
+}
+
+/* ───────── Pie Chart Label ───────── */
+function renderPieLabel({ name, value, percent }) {
+  return `${name}: ${value} (${(percent * 100).toFixed(0)}%)`;
+}
+
+/* ───────── Main Component ───────── */
 function DashboardHome({ onNavigateTo }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,297 +74,305 @@ function DashboardHome({ onNavigateTo }) {
     }
   };
 
+  /* ── Loading State ── */
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center py-32">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-semibold">Memuat dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-[3px] border-blue-200 border-t-blue-600 mx-auto mb-4" />
+          <p className="text-gray-500 font-medium text-sm tracking-wide">Memuat dashboard…</p>
         </div>
       </div>
     );
   }
 
+  /* ── Error State ── */
   if (!stats) {
     return (
-      <div className="p-6 bg-red-50 border border-red-200 rounded-lg text-red-700">
-        Gagal memuat data dashboard
+      <div className="p-6 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-3">
+        <AlertCircle className="w-5 h-5 shrink-0" />
+        <span className="font-medium">Gagal memuat data dashboard. Silakan muat ulang halaman.</span>
       </div>
     );
   }
 
+  /* ── Chart Data ── */
   const orderData = [
-    { name: 'Selesai', value: stats.orders.completed, fill: '#10b981' },
-    { name: 'Diterima', value: stats.orders.accepted, fill: '#3b82f6' },
-    { name: 'Pending', value: stats.orders.pending, fill: '#f59e0b' },
-    { name: 'Dibatalkan', value: stats.orders.cancelled, fill: '#ef4444' },
+    { name: 'Selesai',    value: stats.orders.completed, fill: PIE_COLORS[0] },
+    { name: 'Diterima',   value: stats.orders.accepted,  fill: PIE_COLORS[1] },
+    { name: 'Pending',    value: stats.orders.pending,   fill: PIE_COLORS[2] },
+    { name: 'Dibatalkan', value: stats.orders.cancelled, fill: PIE_COLORS[3] },
   ];
 
-  const orderStatusData = [
-    { status: 'Selesai', count: stats.orders.completed },
-    { status: 'Diterima', count: stats.orders.accepted },
-    { status: 'Pending', count: stats.orders.pending },
-    { status: 'Dibatalkan', count: stats.orders.cancelled },
+  const categoryData = (stats.category_distribution || []).map((item, i) => ({
+    ...item,
+    fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+  }));
+
+  /* ── Stat Cards Data ── */
+  const statCards = [
+    {
+      label: 'Total Pengguna',
+      value: stats.total_users,
+      icon: Users,
+      accent: 'blue',
+      sub: null,
+    },
+    {
+      label: 'Total Tukang',
+      value: stats.total_tukangs,
+      icon: Briefcase,
+      accent: 'violet',
+      sub: `${stats.approved_tukangs} Terverifikasi`,
+      subColor: 'text-emerald-600',
+    },
+    {
+      label: 'Total Pesanan',
+      value: stats.orders.total,
+      icon: CheckCircle,
+      accent: 'emerald',
+      sub: `${stats.orders.completed} Selesai`,
+      subColor: 'text-emerald-600',
+    },
+    {
+      label: 'Pesanan Pending',
+      value: stats.orders.pending,
+      icon: AlertCircle,
+      accent: 'amber',
+      sub: 'Perlu Perhatian',
+      subColor: 'text-amber-600',
+    },
   ];
+
+  const accentMap = {
+    blue:    { border: 'border-blue-500',    bg: 'bg-blue-50',    icon: 'text-blue-600' },
+    violet:  { border: 'border-violet-500',  bg: 'bg-violet-50',  icon: 'text-violet-600' },
+    emerald: { border: 'border-emerald-500', bg: 'bg-emerald-50', icon: 'text-emerald-600' },
+    amber:   { border: 'border-amber-500',   bg: 'bg-amber-50',   icon: 'text-amber-600' },
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard Admin KANGMAS</h1>
-          <p className="text-gray-600">Kelola dan monitor semua aktivitas platform</p>
+    <div className="space-y-6">
+      {/* ─── Pending Verification Alert ─── */}
+      {stats.pending_tukangs > 0 && (
+        <button
+          onClick={() => onNavigateTo('verification')}
+          className="w-full flex items-center gap-4 px-5 py-4 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors group text-left"
+        >
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-100 group-hover:bg-amber-200 transition-colors">
+            <ShieldAlert className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-amber-800">
+              {stats.pending_tukangs} Tukang Menunggu Verifikasi
+            </p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              Klik untuk meninjau dan memverifikasi pendaftaran tukang baru
+            </p>
+          </div>
+          <span className="text-amber-400 group-hover:text-amber-600 transition-colors text-lg">→</span>
+        </button>
+      )}
+
+      {/* ─── Statistics Cards ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {statCards.map((card) => {
+          const a = accentMap[card.accent];
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.label}
+              className={`bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 border-l-4 ${a.border}`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider">{card.label}</p>
+                  <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{card.value}</p>
+                  {card.sub && (
+                    <p className={`text-xs font-medium ${card.subColor || 'text-gray-500'} mt-1`}>
+                      {card.accent === 'emerald' || card.accent === 'violet' ? '✓ ' : '⚠ '}{card.sub}
+                    </p>
+                  )}
+                </div>
+                <div className={`${a.bg} p-3 rounded-xl`}>
+                  <Icon className={`w-6 h-6 ${a.icon}`} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ─── Charts Row ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Pie Chart — Status Pesanan */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-base font-bold text-gray-900 mb-5">Distribusi Status Pesanan</h2>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart>
+              <Pie
+                data={orderData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={renderPieLabel}
+                outerRadius={100}
+                innerRadius={45}
+                fill="#8884d8"
+                dataKey="value"
+                strokeWidth={2}
+                stroke="#fff"
+              >
+                {orderData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip content={<OrderPieTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+          {/* Legend */}
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-3">
+            {orderData.map((item) => (
+              <div key={item.name} className="flex items-center gap-1.5 text-xs text-gray-600">
+                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: item.fill }} />
+                {item.name}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Total Users */}
-          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">Total Pengguna</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total_users}</p>
-              </div>
-              <div className="bg-blue-100 p-4 rounded-lg">
-                <Users className="w-8 h-8 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          {/* Total Tukangs */}
-          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition border-l-4 border-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">Total Tukang</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total_tukangs}</p>
-                <p className="text-xs text-green-600 mt-2">✓ {stats.approved_tukangs} Terverifikasi</p>
-              </div>
-              <div className="bg-purple-100 p-4 rounded-lg">
-                <Briefcase className="w-8 h-8 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          {/* Total Orders */}
-          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">Total Pesanan</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.orders.total}</p>
-                <p className="text-xs text-green-600 mt-2">✓ {stats.orders.completed} Selesai</p>
-              </div>
-              <div className="bg-green-100 p-4 rounded-lg">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          {/* Pending Orders */}
-          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition border-l-4 border-orange-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">Pesanan Pending</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.orders.pending}</p>
-                <p className="text-xs text-orange-600 mt-2">⚠ Perlu Perhatian</p>
-              </div>
-              <div className="bg-orange-100 p-4 rounded-lg">
-                <AlertCircle className="w-8 h-8 text-orange-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Order Status Chart */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Status Pesanan</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={orderData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {orderData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
+        {/* Bar Chart — Distribusi Kategori Tukang */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-base font-bold text-gray-900 mb-5">Distribusi Kategori Tukang</h2>
+          {categoryData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={categoryData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis
+                  type="category"
+                  dataKey="category"
+                  tick={{ fontSize: 12, fill: '#475569', fontWeight: 500 }}
+                  width={110}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip content={<CategoryBarTooltip />} cursor={{ fill: '#f8fafc' }} />
+                <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={22}>
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cat-${index}`} fill={entry.fill} />
                   ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Order Status Bar Chart */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Breakdown Pesanan</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={orderStatusData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="status" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[280px] text-gray-400">
+              <Briefcase className="w-10 h-10 mb-2 text-gray-300" />
+              <p className="text-sm font-medium">Belum ada data kategori tukang</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Bottom Row: Top Tukangs + Recent Orders ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Top Rated Tukangs */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-bold text-gray-900">Tukang Rating Tertinggi</h2>
+            <Star className="w-4 h-4 text-amber-500" />
           </div>
+          <div className="space-y-3">
+            {stats.top_rated_tukangs && stats.top_rated_tukangs.length > 0 ? (
+              stats.top_rated_tukangs.map((tukang, index) => (
+                <div
+                  key={tukang.id}
+                  className="flex items-center justify-between p-3.5 bg-gray-50/80 rounded-lg hover:bg-gray-100/80 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg text-white font-bold text-xs shrink-0 ${
+                      index === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' :
+                      index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
+                      index === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500' :
+                      'bg-gray-300'
+                    }`}>
+                      #{index + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{tukang.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{tukang.category}</p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <div className="flex items-center gap-1 justify-end">
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      <span className="font-bold text-gray-900 text-sm">{tukang.rating}</span>
+                    </div>
+                    <p className="text-[11px] text-gray-400">{tukang.total_orders} pesanan</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-gray-400 text-center py-10">
+                <Star className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm font-medium">Belum ada data tukang</p>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => onNavigateTo('analytics')}
+            className="w-full mt-4 px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-semibold"
+          >
+            Lihat Semua Analitik →
+          </button>
         </div>
 
-        {/* Top Rated Tukangs, Top Users, & Recent Orders */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Top Rated Tukangs */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Tukang Terbaik (Top Rating)</h2>
-              <Star className="w-5 h-5 text-yellow-500" />
-            </div>
-            <div className="space-y-4">
-              {stats.top_rated_tukangs && stats.top_rated_tukangs.length > 0 ? (
-                stats.top_rated_tukangs.map((tukang, index) => (
-                  <div key={tukang.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 text-white rounded-full font-bold text-sm">
-                        #{index + 1}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{tukang.name}</p>
-                        <p className="text-xs text-gray-500">{tukang.category}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 justify-end">
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="font-bold text-gray-900">{tukang.rating}</span>
-                      </div>
-                      <p className="text-xs text-gray-500">{tukang.total_orders} pesanan</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-8">Belum ada data tukang</p>
-              )}
-            </div>
-            <button
-              onClick={() => onNavigateTo('analytics')}
-              className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
-            >
-              Lihat Semua Analitik
-            </button>
+        {/* Recent Orders */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-bold text-gray-900">Pesanan Terbaru</h2>
+            <Clock className="w-4 h-4 text-blue-500" />
           </div>
+          <div className="space-y-3">
+            {stats.recent_orders && stats.recent_orders.length > 0 ? (
+              stats.recent_orders.map((order) => {
+                const statusConfig = {
+                  completed: { label: 'Selesai',    bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-500' },
+                  accepted:  { label: 'Diterima',   bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-500' },
+                  pending:   { label: 'Pending',    bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-500' },
+                  cancelled: { label: 'Dibatalkan', bg: 'bg-red-50',     text: 'text-red-700',     border: 'border-red-500' },
+                };
+                const s = statusConfig[order.status] || statusConfig.pending;
 
-          {/* Top Users Ranking */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Ranking Pengguna Terbaik</h2>
-              <Users className="w-5 h-5 text-blue-500" />
-            </div>
-            <div className="space-y-4">
-              {stats.top_users && stats.top_users.length > 0 ? (
-                stats.top_users.map((user, index) => (
-                  <div key={user.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-400 to-sky-600 text-white rounded-full font-bold text-sm">
-                          #{index + 1}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">{user.name}</p>
-                          <p className="text-xs text-gray-500">{user.completed_orders} pesanan selesai</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-900">{user.total_orders} total</p>
-                        <p className="text-xs text-gray-500">Rp {Number(user.total_spent).toLocaleString('id-ID')}</p>
-                      </div>
+                return (
+                  <div
+                    key={order.id}
+                    className={`flex items-center justify-between p-3.5 bg-gray-50/80 rounded-lg hover:bg-gray-100/80 transition-colors border-l-[3px] ${s.border}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{order.user_name}</p>
+                      <p className="text-xs text-gray-500 truncate">→ {order.tukang_name}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">{order.created_at}</p>
                     </div>
+                    <span className={`${s.bg} ${s.text} px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 ml-3`}>
+                      {s.label}
+                    </span>
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-8">Belum ada data pengguna</p>
-              )}
-            </div>
-            <button
-              onClick={() => onNavigateTo('analytics')}
-              className="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-semibold"
-            >
-              Lihat Semua Analitik
-            </button>
+                );
+              })
+            ) : (
+              <div className="text-gray-400 text-center py-10">
+                <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm font-medium">Belum ada pesanan</p>
+              </div>
+            )}
           </div>
-
-          {/* Recent Orders */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Pesanan Terbaru</h2>
-              <Clock className="w-5 h-5 text-blue-500" />
-            </div>
-            <div className="space-y-3">
-              {stats.recent_orders && stats.recent_orders.length > 0 ? (
-                stats.recent_orders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition border-l-4 border-blue-400">
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900 text-sm">{order.user_name}</p>
-                      <p className="text-xs text-gray-500">untuk {order.tukang_name}</p>
-                      <p className="text-xs text-gray-400 mt-1">{order.created_at}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        order.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
-                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {order.status === 'completed' ? 'Selesai' :
-                         order.status === 'accepted' ? 'Diterima' :
-                         order.status === 'pending' ? 'Pending' :
-                         'Dibatalkan'}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-8">Belum ada pesanan</p>
-              )}
-            </div>
-            <button
-              onClick={() => onNavigateTo('orders')}
-              className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
-            >
-              Lihat Semua Pesanan
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-8 text-white">
-          <h3 className="text-2xl font-bold mb-6">Aksi Cepat</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => onNavigateTo('verification')}
-              className="bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-lg px-6 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2"
-            >
-              <Shield className="w-5 h-5" />
-              Verifikasi Tukang
-            </button>
-            <button
-              onClick={() => onNavigateTo('manage')}
-              className="bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-lg px-6 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2"
-            >
-              <Users className="w-5 h-5" />
-              Kelola Tukang
-            </button>
-            <button
-              onClick={() => onNavigateTo('analytics')}
-              className="bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-lg px-6 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2"
-            >
-              <TrendingUp className="w-5 h-5" />
-              Lihat Analitik
-            </button>
-          </div>
+          <button
+            onClick={() => onNavigateTo('orders')}
+            className="w-full mt-4 px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-semibold"
+          >
+            Lihat Semua Pesanan →
+          </button>
         </div>
       </div>
     </div>

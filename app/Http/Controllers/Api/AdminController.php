@@ -52,28 +52,25 @@ class AdminController extends Controller
             ->take(5)
             ->values();
 
-        // Get top users ranking by completed orders and spending
-        $topUsers = User::where('role', 'user')
-            ->withCount([
-                'orders as total_orders_count',
-                'orders as completed_orders_count' => function ($query) {
-                    $query->where('status', 'completed');
-                },
-            ])
-            ->withSum('orders as total_spent', 'total_price')
-            ->orderByDesc('completed_orders_count')
-            ->orderByDesc('total_spent')
-            ->take(5)
+        // Count tukangs pending verification
+        $pendingTukangs = User::where('role', 'tukang')
+            ->whereHas('tukangProfile', function ($q) {
+                $q->where('status', 'pending');
+            })->count();
+
+        // Get tukang category distribution
+        $categoryDistribution = User::where('role', 'tukang')
+            ->whereHas('tukangProfile', function ($q) {
+                $q->where('status', 'approved');
+            })
+            ->with('tukangProfile:id,user_id,category')
             ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'completed_orders' => $user->completed_orders_count ?? 0,
-                    'total_orders' => $user->total_orders_count ?? 0,
-                    'total_spent' => $user->total_spent ?? 0,
-                ];
-            });
+            ->groupBy(fn ($user) => $user->tukangProfile?->category ?? 'Lainnya')
+            ->map(fn ($group, $category) => [
+                'category' => $category,
+                'count' => $group->count(),
+            ])
+            ->values();
 
         // Get recent orders
         $recentOrders = Order::with([
@@ -98,10 +95,11 @@ class AdminController extends Controller
             'total_users' => $totalUsers,
             'total_tukangs' => $totalTukangs,
             'approved_tukangs' => $approvedTukangs,
+            'pending_tukangs' => $pendingTukangs,
             'orders' => $orderStats,
-            'top_users' => $topUsers,
             'top_rated_tukangs' => $topTukangs,
             'recent_orders' => $recentOrders,
+            'category_distribution' => $categoryDistribution,
         ];
 
         return response()->json([
