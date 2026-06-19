@@ -149,9 +149,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
         {label}
       </label>
 
-      {/* Hidden canvas for capture */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -160,7 +158,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
         style={{ display: 'none' }}
       />
 
-      {/* Error message */}
+      {/* pesan error */}
       {error && (
         <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200 mb-3 flex items-start gap-2">
           <X className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -168,7 +166,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
         </div>
       )}
 
-      {/* Captured image preview */}
+      {/* notif berhsail */}
       {capturedImage && !isCameraOpen && (
         <div className="camera-preview-container">
           <div className="camera-captured-result">
@@ -191,7 +189,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
         </div>
       )}
 
-      {/* Camera live view */}
+      {/* kamera view */}
       {isCameraOpen && !capturedImage && (
         <div className="camera-preview-container">
           <div className="camera-live-view">
@@ -203,7 +201,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
               className="camera-video"
               style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
             />
-            {/* Guide overlay - different for KTP vs Selfie */}
+            {/* ini border posisi ktp sajaae */}
             {name === 'ktp' ? (
               <div className="camera-guide-overlay">
                 <div className="camera-guide-ktp-frame"></div>
@@ -231,7 +229,6 @@ export default function CameraCapture({ onCapture, label, required = false, name
         </div>
       )}
 
-      {/* Initial choice buttons */}
       {!isCameraOpen && !capturedImage && (
         <div className="camera-choose-mode">
           <button type="button" onClick={() => startCamera()} className="camera-option-btn camera-option-camera">
@@ -247,7 +244,7 @@ export default function CameraCapture({ onCapture, label, required = false, name
         </div>
       )}
 
-      {/* Required hidden input for form validation */}
+      {/* input tersebunyi dibutuhkan ketika butuh triggerr */}
       {required && !capturedImage && (
         <input
           type="text"

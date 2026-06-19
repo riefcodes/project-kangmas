@@ -14,7 +14,7 @@ class TukangProfileController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $profile = TukangProfile::with('user:id,name,phone_number')->find($id);
+        $profile = TukangProfile::with('user:id,name,phone_number')->where('user_id', $id)->first();
 
         if (! $profile) {
             return response()->json([
