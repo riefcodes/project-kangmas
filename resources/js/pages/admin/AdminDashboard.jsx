@@ -258,12 +258,12 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex pb-10">
+    <div className="h-screen bg-gray-100 flex overflow-hidden">
       {selectedTukang && (
         <DocumentModal tukang={selectedTukang} onClose={() => setSelectedTukang(null)} />
       )}
 
-      <div className="w-64 bg-slate-900 text-white p-6">
+      <div className="w-64 bg-slate-900 text-white p-6 shrink-0 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-8 text-primary">Admin Panel</h2>
         <nav className="space-y-4">
           <button
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
         </nav>
       </div>
 
-      <div className="flex-1 p-10">
+      <div className="flex-1 p-10 overflow-y-auto">
         <div className="flex justify-between items-center mb-10">
           <h1 className="text-3xl font-bold text-gray-800">
             {activeTab === 'home'
