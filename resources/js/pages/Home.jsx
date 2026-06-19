@@ -13,7 +13,7 @@ export default function Home() {
         <div className="kangmas-container relative z-20 flex flex-col md:flex-row items-center">
           <div className="md:w-1/2">
             <div className="inline-flex items-center gap-2 bg-primary/20 text-primary border border-primary/50 px-4 py-1 rounded-full text-xs font-bold mb-6 tracking-wider">
-              KAMI ADALAH TENAGA KERJA PROFESIONAL
+              KAMI ADALAH TENAGA KERJA ROFESIONAL
             </div>
             <h1 className="text-5xl md:text-6xl font-bold font-sans tracking-tight mb-6 leading-tight">
               Kami Adalah Tenaga<br />Kerja Profesional
