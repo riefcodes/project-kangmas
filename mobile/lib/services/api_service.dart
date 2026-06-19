@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.101.23:8000/api';
-  static const String storageUrl = 'http://192.168.101.23:8000/storage';
+  static const String baseUrl = 'http://localhost:8000/api';
+  static const String storageUrl = 'http://localhost:8000/storage';
 
   static Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
