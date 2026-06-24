@@ -25,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('orders', OrderController::class);
     Route::post('/orders/{id}/cancel', [OrderController::class, 'update']);
     Route::post('/orders/{id}/accept', [OrderController::class, 'update']);
+    Route::post('/orders/{id}/reject', [OrderController::class, 'update']);
     Route::post('/orders/{id}/complete', [OrderController::class, 'update']);
     Route::post('/orders/{id}/approve', [OrderController::class, 'approve']);
 

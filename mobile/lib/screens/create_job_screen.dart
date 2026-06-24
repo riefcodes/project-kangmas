@@ -1,11 +1,13 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class CreateJobScreen extends StatefulWidget {
   final String category;
-  const CreateJobScreen({super.key, required this.category});
+  final int? tukangId;
+  const CreateJobScreen({super.key, required this.category, this.tukangId});
 
   @override
   State<CreateJobScreen> createState() => _CreateJobScreenState();
@@ -17,8 +19,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
 
-  File? _problemImage;
-  final List<File> _locationImages = [];
+  final List<XFile> _locationImages = [];
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -28,20 +29,11 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     _timeController.text = "08:00 - 17:00";
   }
 
-  Future<void> _pickProblemImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-    if (image != null) {
-      setState(() {
-        _problemImage = File(image.path);
-      });
-    }
-  }
-
   Future<void> _pickLocationImages() async {
     final List<XFile> images = await _picker.pickMultiImage();
     if (images.isNotEmpty) {
       setState(() {
-        _locationImages.addAll(images.map((img) => File(img.path)));
+        _locationImages.addAll(images);
       });
     }
   }
@@ -247,7 +239,9 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(15),
                                 image: DecorationImage(
-                                  image: FileImage(_locationImages[index]),
+                                  image: kIsWeb
+                                    ? NetworkImage(_locationImages[index].path)
+                                    : FileImage(File(_locationImages[index].path)) as ImageProvider,
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -285,15 +279,16 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                           return;
                         }
 
-                        // Mengirim data ke ringkasan, foto pertama jadi problem_image
+                        // Mengirim data ke ringkasan
                         Navigator.pushNamed(context, '/order_summary', arguments: {
                           'category': widget.category,
+                          'tukang_id': widget.tukangId,
                           'description': _descriptionController.text,
                           'price': _priceController.text,
                           'job_date': _dateController.text,
                           'job_time': _timeController.text,
                           'problem_image': _locationImages.first,
-                          'location_images': _locationImages.length > 1 ? _locationImages.sublist(1) : <File>[],
+                          'location_images': _locationImages.length > 1 ? _locationImages.sublist(1) : <XFile>[],
                         });
                       },
                       style: ElevatedButton.styleFrom(
@@ -313,11 +308,11 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(context),
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(BuildContext context) {
     return Container(
       height: 80,
       decoration: BoxDecoration(
@@ -330,11 +325,11 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              IconButton(icon: const Icon(Icons.home, color: Color(0xFFFFC107)), onPressed: () {}),
-              IconButton(icon: const Icon(Icons.notifications_none, color: Colors.grey), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.home, color: Colors.grey), onPressed: () => Navigator.pushReplacementNamed(context, '/user_home')),
+              IconButton(icon: const Icon(Icons.receipt_long, color: Colors.grey), onPressed: () => Navigator.pushReplacementNamed(context, '/history')),
               const SizedBox(width: 50),
-              IconButton(icon: const Icon(Icons.assignment_outlined, color: Colors.grey), onPressed: () {}),
-              IconButton(icon: const Icon(Icons.chat_bubble_outline, color: Colors.grey), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.chat_bubble_outline, color: Colors.grey), onPressed: () => Navigator.pushReplacementNamed(context, '/chat_list')),
+              IconButton(icon: const Icon(Icons.person_outline, color: Colors.grey), onPressed: () => Navigator.pushReplacementNamed(context, '/profile')),
             ],
           ),
           Positioned(

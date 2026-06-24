@@ -91,6 +91,7 @@ class _TukangDetailScreenState extends State<TukangDetailScreen> {
                         tukangId: user['id'],
                         tukangName: user['name'],
                         category: t['category'],
+                        basePrice: t['base_price'].toString(),
                       ),
                     ),
                   );

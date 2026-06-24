@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:8000/api';
@@ -68,9 +68,9 @@ class ApiService {
   static Future<dynamic> multipartPost({
     required String endpoint,
     Map<String, String>? fields,
-    File? singleFile,
+    XFile? singleFile,
     String singleFileKey = 'file',
-    List<File>? multiFiles,
+    List<XFile>? multiFiles,
     String multiFilesKey = 'files[]',
   }) async {
     final prefs = await SharedPreferences.getInstance();
@@ -87,12 +87,28 @@ class ApiService {
     }
 
     if (singleFile != null) {
-      request.files.add(await http.MultipartFile.fromPath(singleFileKey, singleFile.path));
+      if (kIsWeb) {
+        request.files.add(http.MultipartFile.fromBytes(
+          singleFileKey,
+          await singleFile.readAsBytes(),
+          filename: singleFile.name,
+        ));
+      } else {
+        request.files.add(await http.MultipartFile.fromPath(singleFileKey, singleFile.path));
+      }
     }
 
     if (multiFiles != null) {
       for (var file in multiFiles) {
-        request.files.add(await http.MultipartFile.fromPath(multiFilesKey, file.path));
+        if (kIsWeb) {
+          request.files.add(http.MultipartFile.fromBytes(
+            multiFilesKey,
+            await file.readAsBytes(),
+            filename: file.name,
+          ));
+        } else {
+          request.files.add(await http.MultipartFile.fromPath(multiFilesKey, file.path));
+        }
       }
     }
 

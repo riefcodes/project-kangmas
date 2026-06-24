@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 
@@ -41,20 +43,26 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
 
     setState(() => _isSubmitting = true);
     try {
+      final Map<String, String> fields = {
+        'category': args['category']?.toString() ?? '',
+        'description': args['description']?.toString() ?? '',
+        'price': args['price']?.toString() ?? '0',
+        'job_date': formattedDate, // Gunakan tanggal yang sudah diformat
+        'job_time': args['job_time']?.toString() ?? '',
+        'address': _addressController.text.trim(),
+        'status': 'pending',
+      };
+
+      if (args['tukang_id'] != null) {
+        fields['tukang_id'] = args['tukang_id'].toString();
+      }
+
       final response = await ApiService.multipartPost(
         endpoint: '/orders',
-        fields: {
-          'category': args['category'] ?? '',
-          'description': args['description'] ?? '',
-          'price': args['price'] ?? '0',
-          'job_date': formattedDate, // Gunakan tanggal yang sudah diformat
-          'job_time': args['job_time'] ?? '',
-          'address': _addressController.text.trim(),
-          'status': 'pending',
-        },
-        singleFile: args['problem_image'] as File?,
+        fields: fields,
+        singleFile: args['problem_image'] as XFile?,
         singleFileKey: 'image',
-        multiFiles: args['location_images'] as List<File>?,
+        multiFiles: args['location_images'] as List<XFile>?,
         multiFilesKey: 'location_images[]',
       );
 
@@ -79,8 +87,8 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
   @override
   Widget build(BuildContext context) {
     final Map<String, dynamic> args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final File? problemImage = args['problem_image'] as File?;
-    final List<File>? locationImages = args['location_images'] as List<File>?;
+    final XFile? problemImage = args['problem_image'] as XFile?;
+    final List<XFile>? locationImages = args['location_images'] as List<XFile>?;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -146,7 +154,12 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(15),
-                        image: DecorationImage(image: FileImage(problemImage), fit: BoxFit.cover),
+                        image: DecorationImage(
+                          image: kIsWeb
+                            ? NetworkImage(problemImage.path)
+                            : FileImage(File(problemImage.path)) as ImageProvider,
+                          fit: BoxFit.cover
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -206,7 +219,12 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
                             width: 100,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
-                              image: DecorationImage(image: FileImage(locationImages[index]), fit: BoxFit.cover),
+                              image: DecorationImage(
+                                image: kIsWeb
+                                  ? NetworkImage(locationImages[index].path)
+                                  : FileImage(File(locationImages[index].path)) as ImageProvider,
+                                fit: BoxFit.cover
+                              ),
                             ),
                           );
                         },

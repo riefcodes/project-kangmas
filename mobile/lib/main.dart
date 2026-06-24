@@ -20,7 +20,6 @@ import 'screens/job_closing_screen.dart';
 import 'screens/create_job_screen.dart';
 import 'screens/order_summary_screen.dart';
 import 'screens/user_job_success_screen.dart';
-import 'screens/live_tracking_screen.dart';
 import 'screens/proof_approval_screen.dart';
 import 'screens/proof_view_screen.dart';
 
@@ -84,16 +83,20 @@ class KangmasApp extends StatelessWidget {
         '/job_closing': (context) => const JobClosingScreen(),
         '/create_job': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
+          String category = 'Lainnya';
+          int? tukangId;
+
           if (args is Map) {
-            return CreateJobScreen(category: args['category']?.toString() ?? 'Lainnya');
+            category = args['category']?.toString() ?? 'Lainnya';
+            tukangId = args['tukang_id'] as int?;
           } else if (args is String) {
-            return CreateJobScreen(category: args);
+            category = args;
           }
-          return const CreateJobScreen(category: 'Lainnya');
+
+          return CreateJobScreen(category: category, tukangId: tukangId);
         },
         '/order_summary': (context) => const OrderSummaryScreen(),
         '/user_job_success': (context) => const UserJobSuccessScreen(),
-        '/live_tracking': (context) => const LiveTrackingScreen(),
         '/proof_approval': (context) => const ProofApprovalScreen(),
         '/proof_view': (context) => const ProofViewScreen(),
       },
