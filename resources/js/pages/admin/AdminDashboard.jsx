@@ -153,6 +153,80 @@ function DocumentModal({ tukang, onClose }) {
   );
 }
 
+function OrderDocumentModal({ order, onClose }) {
+  if (!order) return null;
+
+  const docs = [];
+  if (order.image_path) {
+    docs.push({ label: 'Foto Masalah Utama', url: normalizeStorageUrl(order.image_path) });
+  }
+  if (order.location_images && order.location_images.length > 0) {
+    order.location_images.forEach((img, idx) => {
+      docs.push({ label: `Foto Kondisi Lokasi ${idx + 1}`, url: normalizeStorageUrl(img.image_path || img.path) });
+    });
+  }
+  if (order.proof_image) {
+    docs.push({ label: 'Bukti Pekerjaan Selesai', url: normalizeStorageUrl(order.proof_image) });
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">Foto & Bukti Pesanan</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              ID Pesanan &bull; #O-{order.id}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xl font-bold transition"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div className="p-6 grid gap-6">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Berkas Gambar Pesanan</h3>
+          {docs.length === 0 ? (
+            <div className="text-center text-gray-400 py-8">
+              <div className="flex justify-center mb-2"><FolderOpen className="w-10 h-10 text-gray-300" /></div>
+              <p className="text-sm">Tidak ada foto/bukti yang diupload untuk pesanan ini.</p>
+            </div>
+          ) : docs.map((doc, idx) => (
+            <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
+              <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <span className="font-semibold text-gray-700 text-sm">{doc.label}</span>
+              </div>
+              <div className="p-4 flex justify-center bg-gray-50 min-h-[180px] items-center">
+                <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={doc.url}
+                    alt={doc.label}
+                    className="max-h-64 max-w-full rounded-lg object-contain shadow border border-gray-200 hover:opacity-90 transition"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = '<div class="text-center text-red-400 py-8"><p class="text-sm font-semibold">Gagal memuat gambar</p><p class="text-xs text-gray-400 mt-1">File mungkin belum tersedia di server</p></div>';
+                    }}
+                  />
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('home');
   const [pendingTukangs, setPendingTukangs] = useState([]);
@@ -161,6 +235,7 @@ export default function AdminDashboard() {
   const [ordersData, setOrdersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTukang, setSelectedTukang] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -261,6 +336,9 @@ export default function AdminDashboard() {
     <div className="h-screen bg-gray-100 flex overflow-hidden">
       {selectedTukang && (
         <DocumentModal tukang={selectedTukang} onClose={() => setSelectedTukang(null)} />
+      )}
+      {selectedOrder && (
+        <OrderDocumentModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
       )}
 
       <div className="w-64 bg-slate-900 text-white p-6 shrink-0 overflow-y-auto">
@@ -496,6 +574,7 @@ export default function AdminDashboard() {
                         <th className="p-4 font-semibold text-gray-600">Pelanggan</th>
                         <th className="p-4 font-semibold text-gray-600">Mitra Tukang</th>
                         <th className="p-4 font-semibold text-gray-600">Deskripsi Masalah</th>
+                        <th className="p-4 font-semibold text-gray-600">Foto & Bukti</th>
                         <th className="p-4 font-semibold text-gray-600">Estimasi Harga</th>
                         <th className="p-4 font-semibold text-gray-600">Status</th>
                         <th className="p-4 font-semibold text-gray-600">Ulasan & Rating</th>
@@ -504,7 +583,7 @@ export default function AdminDashboard() {
                     <tbody>
                       {ordersData.length === 0 ? (
                         <tr>
-                          <td colSpan="7" className="p-8 text-center text-gray-400">
+                          <td colSpan="8" className="p-8 text-center text-gray-400">
                             <div className="flex flex-col items-center justify-center py-6">
                               <ShoppingBag className="w-12 h-12 text-gray-300 mb-2 animate-bounce" />
                               <p className="text-base font-semibold text-gray-500">Tidak ada aktivitas pemesanan saat ini</p>
@@ -545,6 +624,14 @@ export default function AdminDashboard() {
                             <td className="p-4 max-w-[240px]">
                               <p className="text-sm text-gray-700 font-medium truncate" title={order.description}>{order.description}</p>
                               <span className="text-xs text-gray-400 flex items-center gap-1 mt-1"><Calendar className="w-3 h-3 text-gray-400" /> {new Date(order.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}</span>
+                            </td>
+                            <td className="p-4">
+                              <button
+                                onClick={() => setSelectedOrder(order)}
+                                className="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-blue-100 transition"
+                              >
+                                <IdCard className="w-4 h-4 inline" /> Foto
+                              </button>
                             </td>
                             <td className="p-4 font-bold text-gray-800">
                               {order.total_price ? `Rp ${Number(order.total_price).toLocaleString('id-ID')}` : <span className="text-xs text-gray-400 font-normal italic">Menunggu Survei</span>}
