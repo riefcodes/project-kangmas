@@ -138,6 +138,7 @@ class AdminController extends Controller
             'user:id,name,phone_number',
             'tukang:id,name,phone_number',
             'review',
+            'locationImages',
         ])->latest();
 
         if ($request->has('status') && in_array($request->query('status'), ['pending', 'accepted', 'completed', 'cancelled'])) {
